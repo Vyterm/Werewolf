@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{2e232785-25d1-4d33-87ad-52a5fe4f2a6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Net">
+      <UniqueIdentifier>{a31bfc2f-ee5f-4049-9bc4-15b0bbdd7256}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Net\Packets">
+      <UniqueIdentifier>{5cf84b94-ac4d-4b67-a829-9f92fa6f178e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\UI">
+      <UniqueIdentifier>{d9f91d97-cc06-4dab-bca5-77eabe57a2d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Startup">
+      <UniqueIdentifier>{26a2d190-4745-4edd-ac5a-6561da4933a7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Packet.h">
+      <Filter>Game\Net\Packets</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientPeer.h">
+      <Filter>Game\Net</Filter>
+    </ClInclude>
+    <ClInclude Include="LoginDlg.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="VytClientDlg.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="VytClient.h">
+      <Filter>Startup</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Startup</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Startup</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Startup</Filter>
+    </ClInclude>
+    <ClInclude Include="MsgHandler.h">
+      <Filter>Game\Net</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ClientPeer.cpp">
+      <Filter>Game\Net</Filter>
+    </ClCompile>
+    <ClCompile Include="LoginDlg.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="VytClientDlg.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="VytClient.cpp">
+      <Filter>Startup</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Startup</Filter>
+    </ClCompile>
+    <ClCompile Include="MsgHandler.cpp">
+      <Filter>Game\Net</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="VytClient.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\VytClient.rc2">
+      <Filter>资源文件</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\VytClient.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
