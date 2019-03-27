@@ -45,9 +45,9 @@ namespace vyt
 		static DWORD CALLBACK RecvProc(LPVOID pArg);
 	public:
 		bool Connect(CString address, short port);
-		bool Send(__Packet &&packet);
+		bool Send(Packet packet);
 		// This method return nullptr while empty in queue.
-		const Packet Recv();
+		Packet Recv();
 	};
 }
 

@@ -1,4 +1,5 @@
 #include "MsgHandler.h"
+#include "LoginDlg.h"
 
 std::map<vyt::command, std::map<vyt::command, Handler>> handlers = {
 	{ vyt::command(OpCommand::Kernel), {
@@ -29,20 +30,22 @@ void KernelVersionHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
 
 void UserLoginHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
 {
+	LoginDlg *pLoginDlg = dynamic_cast<LoginDlg*>(wnd);
+	if (nullptr == pLoginDlg) return;
 	if (msgSize != 1)
 		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
-	else if (msg[0] == 0)
-		MessageBox(wnd->GetSafeHwnd(), _T("登录成功"), _T("登录成功"), MB_ICONINFORMATION);
-	else if (msg[0] == 1)
-		MessageBox(wnd->GetSafeHwnd(), _T("不存在的用户名"), _T("警告"), MB_ICONERROR);
-	else if (msg[0] == 2)
-		MessageBox(wnd->GetSafeHwnd(), _T("用户名与密码不匹配"), _T("警告"), MB_ICONERROR);
-	else if (msg[0] == 3)
-		MessageBox(wnd->GetSafeHwnd(), _T("请勿重复登录！"), _T("警告"), MB_ICONERROR);
+	else
+		pLoginDlg->HandleLoginMsg(msg[0]);
 }
 
 void UserRegisHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
 {
+	LoginDlg *pLoginDlg = dynamic_cast<LoginDlg*>(wnd);
+	if (nullptr == pLoginDlg) return;
+	if (msgSize != 1)
+		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
+	else
+		pLoginDlg->HandleRegisMsg(msg[0]);
 }
 
 void LobbyJoinHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)

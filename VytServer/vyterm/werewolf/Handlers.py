@@ -123,10 +123,10 @@ class UserHandler(Handler):
         username, password = bytes_to_strings(packet)
         # 判断该用户名是否已注册
         if Caches.get().contains(username):
-            client.send(OpCommand.User.value, UserCommand.Regis.value, bytes(1))
+            client.send(OpCommand.User.value, UserCommand.Regis.value, struct.pack('B', 1))
         # 若没有注册则向客户端发送注册成功的消息
         else:
-            client.send(OpCommand.User.value, UserCommand.Regis.value, bytes(0))
+            client.send(OpCommand.User.value, UserCommand.Regis.value, struct.pack('B', 0))
 
     @property
     def handlers(self):

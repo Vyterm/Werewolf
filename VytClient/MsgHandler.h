@@ -4,47 +4,8 @@
 #include <afxwin.h>
 #include <map>
 #include <functional>
+#include "Commands.h"
 #include "Packet.h"
-
-enum class OpCommand
-{
-	Kernel = 0, 
-	User = 1, 
-	Lobby = 2, 
-	Friend = 3, 
-};
-
-
-enum class KernelCommand
-{
-	Version = 0, 
-};
-
-
-enum class UserCommand
-{
-	Login = 0, 
-	Regis = 1, 
-};
-
-
-enum class LobbyCommand
-{
-	Join = 0, 
-	Chat = 1, 
-};
-
-
-enum class FriendCommand
-{
-	Online = 0, 
-	Offline = 1, 
-	Add = 2, 
-	Del = 3, 
-	Chat = 4, 
-	File = 5, 
-	Video = 6, 
-};
 
 template<typename TSubCommand>
 int ToMsgID(OpCommand opCommand, TSubCommand subCommand)

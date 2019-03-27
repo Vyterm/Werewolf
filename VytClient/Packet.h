@@ -11,7 +11,7 @@ namespace vyt
 	using vytsize = unsigned long;
 	using command = long;
 
-	using BufferPair = std::deque<std::pair<void*, vytsize>>&&;
+	using BufferPair = std::deque<std::pair<void*, vytsize>>;
 
 	struct __Buffer
 	{
@@ -122,6 +122,41 @@ namespace vyt
 	inline Packet _Packet(command OpCommand, command SubCommand, BufferPair &&srcs)
 	{
 		return std::make_shared<__Packet>(OpCommand, SubCommand, std::move(srcs));
+	}
+	inline Packet _Packet(command OpCommand, command SubCommand, const char *szFormat, ...)
+	{
+		static const vytsize intSize = sizeof(int), sizesize = sizeof(vytsize);
+		BufferPair srcs;
+		std::deque<CString> cacheStrings;
+		std::deque<vytsize> cacheStringSizes;
+		va_list args;
+		va_start(args, szFormat);
+		while (0 != *szFormat)
+		{
+			switch (*szFormat)
+			{
+			case 's':
+			{
+				cacheStrings.push_back(CString());
+				cacheStringSizes.push_back(vytsize());
+				cacheStrings.back().SetString(va_arg(args, CString));
+				cacheStringSizes.back() = vytsize(cacheStrings.back().GetLength() * sizeof(TCHAR));
+				srcs.push_back({ &cacheStringSizes.back(), sizesize });
+				srcs.push_back({ cacheStrings.back().GetBuffer(), cacheStringSizes.back() });
+				break;
+			}
+			case 'b': srcs.push_back({ &va_arg(args, bool), vytsize(sizeof(bool)) }); break;
+			case 'i': srcs.push_back({ &va_arg(args, int), vytsize(sizeof(int)) }); break;
+			case 'h': srcs.push_back({ &va_arg(args, short), vytsize(sizeof(short)) }); break;
+			case 'f': srcs.push_back({ &va_arg(args, float), vytsize(sizeof(float)) }); break;
+			case 'd': srcs.push_back({ &va_arg(args, double), vytsize(sizeof(double)) }); break;
+			default:
+				throw std::invalid_argument("Unsolved format");
+			}
+			++szFormat;
+		}
+		va_end(args);
+		return _Packet(OpCommand, SubCommand, std::move(srcs));
 	}
 }
 

@@ -50,12 +50,12 @@ namespace vyt
 		return success;
 	}
 
-	bool ClientPeer::Send(__Packet && packet)
+	bool ClientPeer::Send(Packet packet)
 	{
-		return SOCKET_ERROR != ::send(m_socket, (char*)packet.getBuffer(), int(packet.getBufferSize()), 0);
+		return SOCKET_ERROR != ::send(m_socket, (char*)packet->getBuffer(), int(packet->getBufferSize()), 0);
 	}
 
-	const Packet ClientPeer::Recv()
+	Packet ClientPeer::Recv()
 	{
 		guard g(m_packetMutex);
 		if (m_packets.empty()) return nullptr;

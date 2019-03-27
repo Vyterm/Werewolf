@@ -25,7 +25,7 @@ def strings_to_bytes(*sources):
 def bytes_to_strings(sources):
     result = []
     index = 0
-    while index < len(sources):
+    while 0 <= index < len(sources):
         src, size = bytes_to_string_with_size(sources[index:])
         result.append(src)
         index += size
