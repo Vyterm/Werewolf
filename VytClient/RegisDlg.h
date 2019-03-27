@@ -28,4 +28,5 @@ public:
 	afx_msg void OnShowLogin();
 	CString m_username;
 	CString m_password;
+	virtual BOOL OnInitDialog();
 };

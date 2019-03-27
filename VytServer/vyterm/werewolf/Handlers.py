@@ -143,10 +143,35 @@ class UserHandler(Handler):
 
 class LobbyHandler(Handler):
     def join(self, client, packet):
+        if client not in _Client2Player:
+            return
+        lobby_id = struct.unpack('i', packet)
+        if lobby_id not in self.Lobbys:
+            self.Lobbys[lobby_id] = []
+        player = _Client2Player[client]
+        if player not in self.Lobbys[lobby_id]:
+            self.Lobbys[lobby_id].append(player)
+            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 0))
+        else:
+            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 1))
         pass
 
     def lobby_chat(self, client, packet):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        lobby_id = struct.unpack('i', packet[:4])
+        if lobby_id not in self.Lobbys:
+            return
+        if player not in self.Lobbys[lobby_id]:
+            return
+        chat = bytes_to_string(packet[4:])
+        for p in self.Lobbys[lobby_id]:
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, string_to_bytes(chat))
         pass
+
+    def __init__(self):
+        self.Lobbys = {}
 
     @property
     def handlers(self):
@@ -156,6 +181,12 @@ class LobbyHandler(Handler):
         }
 
     def logout(self, client):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        for lobby in self.Lobbys:
+            if player in lobby:
+                lobby.remove(player)
         pass
 
 
@@ -194,9 +225,9 @@ class FriendHandler(Handler):
 
 
 ActiveHandlers = {
-    OpCommand.User.value: UserHandler(),
-    OpCommand.Lobby.value: LobbyHandler(),
     OpCommand.Friend.value: FriendHandler(),
+    OpCommand.Lobby.value: LobbyHandler(),
+    OpCommand.User.value: UserHandler(),
 }
 
 
