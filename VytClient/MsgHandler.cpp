@@ -24,63 +24,68 @@ std::map<vyt::command, std::map<vyt::command, Handler>> handlers = {
 	} },
 };
 
-void KernelVersionHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void KernelVersionHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void UserLoginHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void UserLoginHandler(CWnd *wnd, vyt::Packet packet)
 {
 	LoginDlg *pLoginDlg = dynamic_cast<LoginDlg*>(wnd);
 	if (nullptr == pLoginDlg) return;
-	if (msgSize != 1)
+	if (packet->getMessageSize() != 1)
 		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
 	else
-		pLoginDlg->HandleLoginMsg(msg[0]);
+		pLoginDlg->HandleLoginMsg(packet->getMessage()[0]);
 }
 
-void UserRegisHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void UserRegisHandler(CWnd *wnd, vyt::Packet packet)
 {
 	LoginDlg *pLoginDlg = dynamic_cast<LoginDlg*>(wnd);
 	if (nullptr == pLoginDlg) return;
-	if (msgSize != 1)
+	if (packet->getMessageSize() != 1)
 		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
 	else
-		pLoginDlg->HandleRegisMsg(msg[0]);
+		pLoginDlg->HandleLoginMsg(packet->getMessage()[0]);
 }
 
-void LobbyJoinHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void LobbyJoinHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void LobbyChatHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void LobbyChatHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendOnlineHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendOnlineHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendOfflineHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendOfflineHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendAddHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendAddHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendDelHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendDelHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendChatHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendChatHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendFileHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendFileHandler(CWnd *wnd, vyt::Packet packet)
 {
 }
 
-void FriendVideoHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize)
+void FriendVideoHandler(CWnd *wnd, vyt::Packet packet)
 {
-
+	CString test1, test2;
+	bool isOnline;
+	int number;
+	float fpi;
+	double pi;
+	packet->Decode("bifdss", &isOnline, &number, &fpi, &pi, &test1, &test2);
 }

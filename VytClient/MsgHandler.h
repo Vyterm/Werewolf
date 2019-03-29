@@ -13,19 +13,19 @@ int ToMsgID(OpCommand opCommand, TSubCommand subCommand)
 	return WM_USER + 1 + (int(opCommand) << 16) + int(subCommand);
 }
 
-using Handler = std::function<void(CWnd *wnd, vyt::pByte, vyt::vytsize)>;
-void KernelVersionHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void UserLoginHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void UserRegisHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void LobbyJoinHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void LobbyChatHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendOnlineHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendOfflineHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendAddHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendDelHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendChatHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendFileHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
-void FriendVideoHandler(CWnd *wnd, vyt::pByte msg, vyt::vytsize msgSize);
+using Handler = std::function<void(CWnd *wnd, vyt::Packet)>;
+void KernelVersionHandler(CWnd *wnd, vyt::Packet packet);
+void UserLoginHandler(CWnd *wnd, vyt::Packet packet);
+void UserRegisHandler(CWnd *wnd, vyt::Packet packet);
+void LobbyJoinHandler(CWnd *wnd, vyt::Packet packet);
+void LobbyChatHandler(CWnd *wnd, vyt::Packet packet);
+void FriendOnlineHandler(CWnd *wnd, vyt::Packet packet);
+void FriendOfflineHandler(CWnd *wnd, vyt::Packet packet);
+void FriendAddHandler(CWnd *wnd, vyt::Packet packet);
+void FriendDelHandler(CWnd *wnd, vyt::Packet packet);
+void FriendChatHandler(CWnd *wnd, vyt::Packet packet);
+void FriendFileHandler(CWnd *wnd, vyt::Packet packet);
+void FriendVideoHandler(CWnd *wnd, vyt::Packet packet);
 
 extern std::map<vyt::command, std::map<vyt::command, Handler>> handlers;
 
@@ -42,7 +42,7 @@ inline void HandlePacket(CWnd *wnd, const vyt::Packet &packet)
 	{
 		auto subHandlers = handlers[packet->getOpCommand()];
 		if (subHandlers.end() != subHandlers.find(packet->getSubCommand()))
-			subHandlers[packet->getSubCommand()](wnd, packet->getMessage(), packet->getMessageSize());
+			subHandlers[packet->getSubCommand()](wnd, packet);
 		else
 			LogInvalidPacket(packet);
 	}

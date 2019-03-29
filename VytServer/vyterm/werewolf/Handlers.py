@@ -207,6 +207,9 @@ class FriendHandler(Handler):
         pass
 
     def video_trans(self, client, packet):
+        print(id(self), packet)
+        client.send(OpCommand.Friend.value, FriendCommand.Video.value, struct.pack('=Bifd', True, 123456, 3.14, 3.141597)
+                    + strings_to_bytes("Test", "Video"))
         pass
 
     @property

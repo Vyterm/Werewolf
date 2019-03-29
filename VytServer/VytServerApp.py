@@ -1,5 +1,6 @@
 import socket
 import threading
+# Python 会自动对齐到四字节，因此如果要发送单个字节的话，需要在格式字符串前加上=取消对齐
 import struct
 from vyterm.werewolf.Handlers import handle_packet, handle_logout
 

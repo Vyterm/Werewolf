@@ -116,6 +116,48 @@ namespace vyt
 		{
 			return m_buffer->m_size;
 		}
+
+	private:
+		template <typename T>
+		static void SetBuffer(va_list &args, pByte &pBuffer)
+		{
+			*va_arg(args, T*) = *(T*)pBuffer;
+			pBuffer += sizeof(T);
+		}
+	public:
+		void Decode(const char *szFormat, ...)
+		{
+			auto pBuffer = this->getMessage();
+			va_list args;
+			va_start(args, szFormat);
+			while (0 != *szFormat)
+			{
+				switch (*szFormat)
+				{
+				case 's':
+				{
+					vytsize stringLength = *(vytsize*)pBuffer;
+					pBuffer += sizeof(vytsize);
+					TCHAR &cache = *(TCHAR*)(pBuffer+stringLength);
+					TCHAR tmp = cache;
+					cache = _T('\0');
+					va_arg(args, CString*)->SetString((LPCTSTR)pBuffer);
+					cache = tmp;
+					pBuffer += stringLength;
+					break;
+				}
+				case 'b': SetBuffer<bool>(args, pBuffer); break;
+				case 'i': SetBuffer<int>(args, pBuffer); break;
+				case 'h': SetBuffer<short>(args, pBuffer); break;
+				case 'f': SetBuffer<float>(args, pBuffer); break;
+				case 'd': SetBuffer<double>(args, pBuffer); break;
+				default:
+					throw std::invalid_argument("Unsolved format");
+				}
+				++szFormat;
+			}
+			va_end(args);
+		}
 	};
 
 	using Packet = std::shared_ptr<__Packet>;
