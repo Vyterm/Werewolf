@@ -55,6 +55,9 @@
     <ClInclude Include="Commands.h">
       <Filter>Game\Net</Filter>
     </ClInclude>
+    <ClInclude Include="RegisVerifyDlg.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -76,6 +79,9 @@
       <Filter>Game\Net</Filter>
     </ClCompile>
     <ClCompile Include="RegisDlg.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="RegisVerifyDlg.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
   </ItemGroup>

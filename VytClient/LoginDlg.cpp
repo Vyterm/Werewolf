@@ -15,7 +15,7 @@ using namespace vyt;
 IMPLEMENT_DYNAMIC(LoginDlg, CDialogEx)
 
 LoginDlg::LoginDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_LOGINDLG, pParent), m_regisDlg(this)
+	: CDialogEx(IDD_LOGINDLG, pParent), m_regisDlg(this), m_verifyDlg(this)
 	, m_username(_T(""))
 	, m_password(_T(""))
 {
@@ -45,12 +45,22 @@ void LoginDlg::HandleLoginMsg(byte msg)
 void LoginDlg::HandleRegisMsg(byte msg)
 {
 	if (msg == 0)
+		m_verifyDlg.ShowWindow(m_regisDlg.m_username);
+	else if (msg == 1)
+		MessageBox(GetStringByTable(IDS_REGISERROR1), GetStringByTable(IDS_REGISERRORTITLE), MB_ICONERROR);
+}
+
+void LoginDlg::HandleVerifyMsg(byte msg)
+{
+	if (msg == 0)
 	{
 		MessageBox(GetStringByTable(IDS_LOGINSUCCESSHINT), GetStringByTable(IDS_REGISSUCCESSTITLE), MB_ICONINFORMATION);
 		EndDialog(SUCCESS_FLAG);
 	}
 	else if (msg == 1)
-		MessageBox(GetStringByTable(IDS_REGISERROR1), GetStringByTable(IDS_REGISERRORTITLE), MB_ICONERROR);
+	{
+		MessageBox(_T("输入的不是有效的验证码"));
+	}
 }
 
 void LoginDlg::ShowLoginDlg()

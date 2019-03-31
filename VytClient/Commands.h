@@ -20,6 +20,7 @@ enum class UserCommand
 {
 	Login = 0,
 	Regis = 1,
+	Verify = 2,
 };
 
 

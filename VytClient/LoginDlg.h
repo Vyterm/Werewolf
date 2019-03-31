@@ -3,6 +3,7 @@
 #include <afxdialogex.h>
 #include "Packet.h"
 #include "RegisDlg.h"
+#include "RegisVerifyDlg.h"
 // LoginDlg 对话框
 
 class LoginDlg : public CDialogEx
@@ -20,10 +21,12 @@ public:
 
 private:
 	RegisDlg m_regisDlg;
+	RegisVerifyDlg m_verifyDlg;
 public:
 	static const int SUCCESS_FLAG = 0x12345678;
 	void HandleLoginMsg(byte msg);
 	void HandleRegisMsg(byte msg);
+	void HandleVerifyMsg(byte msg);
 	void ShowLoginDlg();
 
 protected:

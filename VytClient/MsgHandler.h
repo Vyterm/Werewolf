@@ -17,6 +17,7 @@ using Handler = std::function<void(CWnd *wnd, vyt::Packet)>;
 void KernelVersionHandler(CWnd *wnd, vyt::Packet packet);
 void UserLoginHandler(CWnd *wnd, vyt::Packet packet);
 void UserRegisHandler(CWnd *wnd, vyt::Packet packet);
+void UserVerifyHandler(CWnd *wnd, vyt::Packet packet);
 void LobbyJoinHandler(CWnd *wnd, vyt::Packet packet);
 void LobbyChatHandler(CWnd *wnd, vyt::Packet packet);
 void FriendOnlineHandler(CWnd *wnd, vyt::Packet packet);

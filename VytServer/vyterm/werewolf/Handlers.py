@@ -1,9 +1,13 @@
 from vyterm.conversion import *
 from vyterm.sqladapter import SqlAdapter
 from vyterm.utils import singleton, get_instance
+from vyterm.cryptography import *
+from vyterm.api3_rd import aliyunapi
 from abc import abstractmethod
 from enum import Enum
 from threading import Lock
+from random import randint
+from datetime import *
 
 
 class OpCommand(Enum):
@@ -20,6 +24,7 @@ class KernelCommand(Enum):
 class UserCommand(Enum):
     Login = 0
     Regis = 1
+    Verify = 2
 
 
 class LobbyCommand(Enum):
@@ -46,13 +51,13 @@ _handleLock = Lock()
 @singleton
 class Caches(object):
     def __init__(self):
-        self.mysql = SqlAdapter()
-        # ToDo: load data from sql
-        self.dbPlayers = {
-            "Vyterm": "123456",
-            "Fromex": "123456",
-            "Yitoru": "123456",
-        }
+        self.mysql = SqlAdapter(db="test", password="1JXahbu230x1Zehim88t")
+        self.dbPlayers = {}
+        for player in self.mysql.select("select `user_number`, `user_name`, `user_pass` from `user_table`;"):
+            phone, name, md5_pass = player
+            phone = int(phone)
+            self.dbPlayers[phone] = (name, md5_pass)
+
         self.friends = {
             "Vyterm": ["Fromex"],
             "Fromex": [],
@@ -60,18 +65,39 @@ class Caches(object):
         }
 
     def __del__(self):
-        # ToDo: push data to sql
-        print("Caches release")
+        # This method never execute in multi-thread content, pass this method and direct insert into sql is the solution
         pass
 
-    def contains(self, username):
-        return username in self.dbPlayers
+    def contains(self, phone: int):
+        return phone in self.dbPlayers
 
-    def match(self, username, password):
-        return self.dbPlayers[username] == password
+    def append_user(self, phone: int, username: str, password: str):
+        if phone in self.dbPlayers:
+            return False
+        self.dbPlayers[phone] = md5str(password)
+        assert self.mysql.execute("insert into `user_table`(user_number, user_name, user_pass) values "
+                                  "(%d, '%s', '%s')" % (phone, username, self.dbPlayers[phone]))
+        return True
+
+    def remove_user(self, phone: int):
+        if phone not in self.dbPlayers:
+            return False
+        self.dbPlayers.pop(phone)
+        assert self.mysql.execute("delete from `user_table` where `user_number`=%d" % (phone,))
+        return True
+
+    def match(self, phone: int, password: str):
+        return self.dbPlayers[phone] == md5str(password)
 
     def friend_names(self, username):
         return self.friends[username]
+
+    def get_user_info(self, userphone):
+        count_row, = self.mysql.select(
+            "select `win_count`, `lose_count`, `run_count`, `achievement` from `user_table`"
+            " where `user_id` = (select `user_id` from `user_table` where `user_number` = %d);" % (userphone,))
+        win, lose, run, achieve = count_row
+        return win, lose, run, achieve
 
 
 class Handler(object):
@@ -93,6 +119,9 @@ class Handler(object):
 
 
 class UserHandler(Handler):
+    def __init__(self):
+        self.verifycodes = {}
+
     @staticmethod
     def login(client, packet):
         # 解包，获取用户名及密码
@@ -117,22 +146,51 @@ class UserHandler(Handler):
                 if friendName in _Player2Client:
                     _Player2Client[friendName].send(OpCommand.Friend.value, FriendCommand.Online.value, bytes(1))
 
-    @staticmethod
-    def regis(client, packet):
+    def regis(self, client, packet):
         # 解包，获取用户名及密码
         username, password = bytes_to_strings(packet)
+        # 判断是否为合法的用户名
+        if not username.isdigit() or len(username) != 11:
+            client.send(OpCommand.User.value, UserCommand.Regis.value, struct.pack('B', 2))
         # 判断该用户名是否已注册
-        if Caches.get().contains(username):
+        elif Caches.get().contains(username):
             client.send(OpCommand.User.value, UserCommand.Regis.value, struct.pack('B', 1))
         # 若没有注册则向客户端发送注册成功的消息
         else:
+            code = randint(100000, 999999)
+            # MARK1：保存验证码，用户名，密码，创建时间
+            self.verifycodes[code] = (username, password, datetime.now())
+            # 发送验证码短信
+            aliyunapi.AliyunAdapter().SendSms(username, 'Vyterm', 'SMS_150577820', code)
+            # 给客户端发送验证码短信已发送的消息
             client.send(OpCommand.User.value, UserCommand.Regis.value, struct.pack('B', 0))
+
+    def verify(self, client, packet):
+        # 将超过五分钟的验证码从列表中删除 #MARK1：保存的验证码第三项为创建时间，即t[2]
+        invalidcodes = [code for code, t in self.verifycodes.items() if t[2] - datetime.now() > timedelta(minutes=5)]
+        for code in invalidcodes:
+            self.verifycodes.pop(code)
+        # 解包获取要验证的手机号与验证码
+        phone, code = bytes_to_strings(packet)
+        # 判断手机号及验证码是否有效
+        if not code.isdigit() or not phone.isdigit():
+            client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 1))
+        else:
+            code = int(code)
+            # 如果验证码不存在则表示验证码错误或者已失效，如果验证码与手机号不匹配则表示客户端有恶意:) #MARK1：保存的验证码第一项为用户名，即t[1]
+            if code not in self.verifycodes or self.verifycodes[code][0] != phone:
+                client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 2))
+            # 添加新用户并给客户端发送注册成功的消息 #MARK1：保存的验证码第二项为用户名，即t[1]
+            else:
+                Caches().append_user(int(phone), phone, md5str(self.verifycodes[code][1]))
+                client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
 
     @property
     def handlers(self):
         return {
             UserCommand.Login.value: self.login,
             UserCommand.Regis.value: self.regis,
+            UserCommand.Verify.value: self.verify
         }
 
     def logout(self, client):
@@ -208,7 +266,8 @@ class FriendHandler(Handler):
 
     def video_trans(self, client, packet):
         print(id(self), packet)
-        client.send(OpCommand.Friend.value, FriendCommand.Video.value, struct.pack('=Bifd', True, 123456, 3.14, 3.141597)
+        client.send(OpCommand.Friend.value, FriendCommand.Video.value,
+                    struct.pack('=Bifd', True, 123456, 3.14, 3.141597)
                     + strings_to_bytes("Test", "Video"))
         pass
 
@@ -264,9 +323,15 @@ if __name__ == '__main__':
     # assert handlers[0].execute(None, 0, strings_to_bytes("Vyterm", "123456"))
     assert not handle_packet(None, -1, 0, 0)
     assert not handle_packet(None, 0, -1, 0)
-    print(type(Caches.get))
+    # print(type(Caches.get))
     # assert id(Caches.get()) == id(Caches())
     assert id(Caches.get()) == id(Caches.get())
+    print(Caches.get().get_user_info(18986251734))
+    assert not Caches().remove_user(17708807700)
+    assert Caches().append_user(17708807700, 'TestPlayer', 'Crazy')
+    assert not Caches().append_user(17708807700, 'TestPlayer', 'Crazy')
+    assert Caches().match(17708807700, 'Crazy')
+    assert Caches().remove_user(17708807700)
     print("All tests of werewolf.Handlers passed.")
 else:
     Caches.get()

@@ -8,6 +8,7 @@ std::map<vyt::command, std::map<vyt::command, Handler>> handlers = {
 	{ vyt::command(OpCommand::User), {
 		{ vyt::command(UserCommand::Login), &UserLoginHandler },
 		{ vyt::command(UserCommand::Regis), &UserRegisHandler },
+		{ vyt::command(UserCommand::Verify), &UserVerifyHandler },
 	} },
 	{ vyt::command(OpCommand::Lobby), {
 		{ vyt::command(LobbyCommand::Join), &LobbyJoinHandler },
@@ -45,7 +46,17 @@ void UserRegisHandler(CWnd *wnd, vyt::Packet packet)
 	if (packet->getMessageSize() != 1)
 		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
 	else
-		pLoginDlg->HandleLoginMsg(packet->getMessage()[0]);
+		pLoginDlg->HandleRegisMsg(packet->getMessage()[0]);
+}
+
+void UserVerifyHandler(CWnd * wnd, vyt::Packet packet)
+{
+	LoginDlg *pLoginDlg = dynamic_cast<LoginDlg*>(wnd);
+	if (nullptr == pLoginDlg) return;
+	if (packet->getMessageSize() != 1)
+		MessageBox(wnd->GetSafeHwnd(), _T("非法的消息"), _T("错误"), MB_ICONERROR);
+	else
+		pLoginDlg->HandleVerifyMsg(packet->getMessage()[0]);
 }
 
 void LobbyJoinHandler(CWnd *wnd, vyt::Packet packet)

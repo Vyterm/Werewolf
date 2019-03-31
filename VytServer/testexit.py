@@ -50,22 +50,33 @@
 #     2. 当创建多线程的时候，类的析构就没有调用，为什么？
 # """
 
-import struct
+# import struct
+#
+# if __name__ == '__main__':
+#     print("Default:")
+#     for i in struct.pack('=Bifd', True, 123456, 3, 3.14):
+#         print(i, end=' ')
+#     print("\nB:")
+#     for i in struct.pack('B', True):
+#         print(i, end=' ')
+#     print("\ni:")
+#     for i in struct.pack('i', 123456):
+#         print(i, end=' ')
+#     print("\nf:")
+#     for i in struct.pack('f', 3):
+#         print(i, end=' ')
+#     print("\nd:")
+#     for i in struct.pack('d', 3.14):
+#         print(i, end=' ')
+
 
 if __name__ == '__main__':
-    print("Default:")
-    for i in struct.pack('=Bifd', True, 123456, 3, 3.14):
-        print(i, end=' ')
-    print("\nB:")
-    for i in struct.pack('B', True):
-        print(i, end=' ')
-    print("\ni:")
-    for i in struct.pack('i', 123456):
-        print(i, end=' ')
-    print("\nf:")
-    for i in struct.pack('f', 3):
-        print(i, end=' ')
-    print("\nd:")
-    for i in struct.pack('d', 3.14):
-        print(i, end=' ')
+    # print('123456789'.isdigit())
+    ia = {x: x for x in range(20)}
+    for i in ia:
+        if i % 2:
+            ia.pop(i)
+
+    print(ia)
+
 
