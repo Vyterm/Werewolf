@@ -46,9 +46,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Startup</Filter>
     </ClInclude>
-    <ClInclude Include="MsgHandler.h">
-      <Filter>Game\Net</Filter>
-    </ClInclude>
     <ClInclude Include="RegisDlg.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
@@ -56,6 +53,12 @@
       <Filter>Game\Net</Filter>
     </ClInclude>
     <ClInclude Include="RegisVerifyDlg.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Handler.h">
+      <Filter>Game\Net</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseDialog.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
   </ItemGroup>
@@ -75,13 +78,16 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Startup</Filter>
     </ClCompile>
-    <ClCompile Include="MsgHandler.cpp">
-      <Filter>Game\Net</Filter>
-    </ClCompile>
     <ClCompile Include="RegisDlg.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="RegisVerifyDlg.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Handler.cpp">
+      <Filter>Game\Net</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseDialog.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
   </ItemGroup>

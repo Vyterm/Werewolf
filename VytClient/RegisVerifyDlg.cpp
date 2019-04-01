@@ -14,26 +14,33 @@ using namespace vyt;
 
 IMPLEMENT_DYNAMIC(RegisVerifyDlg, CDialogEx)
 
-RegisVerifyDlg::RegisVerifyDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_R_VERIFY, pParent)
+RegisVerifyDlg::RegisVerifyDlg(CString phone, CWnd* pParent /*=nullptr*/)
+	: CDialogEx(IDD_R_VERIFY, pParent), m_phone(phone), IHandler(command(OpCommand::User), command(UserCommand::Verify))
 	, m_code(_T(""))
 {
-	Create(IDD_R_VERIFY);
 }
 
 RegisVerifyDlg::~RegisVerifyDlg()
 {
 }
 
-void RegisVerifyDlg::ShowWindow(CString phone)
+void RegisVerifyDlg::HandlePacket(vyt::Packet & packet)
 {
-	m_phone = phone;
-	CDialogEx::ShowWindow(SW_SHOW);
-}
-
-void RegisVerifyDlg::HideWindow()
-{
-	CDialogEx::ShowWindow(SW_HIDE);
+	if (packet->getMessageSize() != 1)
+		MessageBox(_T("非法的消息"), _T("错误"), MB_ICONERROR);
+	else
+	{
+		auto msg = packet->getMessage()[0];
+		if (msg == 0)
+		{
+			MessageBox(GetStringByTable(IDS_LOGINSUCCESSHINT), GetStringByTable(IDS_REGISSUCCESSTITLE), MB_ICONINFORMATION);
+			EndDialog(SUCCESS_FLAG);
+		}
+		else if (msg == 1)
+		{
+			MessageBox(_T("输入的不是有效的验证码"));
+		}
+	}
 }
 
 void RegisVerifyDlg::DoDataExchange(CDataExchange* pDX)

@@ -7,73 +7,51 @@
 #include "ClientPeer.h"
 #include "afxdialogex.h"
 #include "Commands.h"
+#include "RegisDlg.h"
 
 using namespace vyt;
 
 // LoginDlg 对话框
 
-IMPLEMENT_DYNAMIC(LoginDlg, CDialogEx)
+IMPLEMENT_DYNAMIC(LoginDlg, BaseDialog)
 
 LoginDlg::LoginDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_LOGINDLG, pParent), m_regisDlg(this), m_verifyDlg(this)
+	: BaseDialog(IDD_LOGINDLG, pParent), IHandler(command(OpCommand::User), command(UserCommand::Login))
 	, m_username(_T(""))
 	, m_password(_T(""))
 {
-	m_regisDlg.Create(IDD_REGISDLG, this);
-	m_regisDlg.ShowWindow(SW_HIDE);
 }
 
 LoginDlg::~LoginDlg()
 {
 }
 
-void LoginDlg::HandleLoginMsg(byte msg)
+void LoginDlg::HandlePacket(vyt::Packet & packet)
 {
-	if (msg == 0)
+	if (packet->getMessageSize() != 1)
+		MessageBox(_T("非法的消息"), _T("错误"), MB_ICONERROR);
+	else
 	{
-		MessageBox(GetStringByTable(IDS_LOGINSUCCESSHINT), GetStringByTable(IDS_LOGINSUCCESSTITLE), MB_ICONINFORMATION);
-		EndDialog(SUCCESS_FLAG);
-	}
-	else if (msg == 1)
-		MessageBox(GetStringByTable(IDS_LOGINERROR1), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
-	else if (msg == 2)
-		MessageBox(GetStringByTable(IDS_LOGINERROR2), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
-	else if (msg == 3)
-		MessageBox(GetStringByTable(IDS_LOGINERROR3), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
-}
-
-void LoginDlg::HandleRegisMsg(byte msg)
-{
-	if (msg == 0)
-		m_verifyDlg.ShowWindow(m_regisDlg.m_username);
-	else if (msg == 1)
-		MessageBox(GetStringByTable(IDS_REGISERROR1), GetStringByTable(IDS_REGISERRORTITLE), MB_ICONERROR);
-}
-
-void LoginDlg::HandleVerifyMsg(byte msg)
-{
-	if (msg == 0)
-	{
-		MessageBox(GetStringByTable(IDS_LOGINSUCCESSHINT), GetStringByTable(IDS_REGISSUCCESSTITLE), MB_ICONINFORMATION);
-		EndDialog(SUCCESS_FLAG);
-	}
-	else if (msg == 1)
-	{
-		MessageBox(_T("输入的不是有效的验证码"));
+		auto msg = packet->getMessage()[0];
+		if (msg == 0)
+		{
+			MessageBox(GetStringByTable(IDS_LOGINSUCCESSHINT), GetStringByTable(IDS_LOGINSUCCESSTITLE), MB_ICONINFORMATION);
+			EndDialog(SUCCESS_FLAG);
+		}
+		else if (msg == 1)
+			MessageBox(GetStringByTable(IDS_LOGINERROR1), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
+		else if (msg == 2)
+			MessageBox(GetStringByTable(IDS_LOGINERROR2), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
+		else if (msg == 3)
+			MessageBox(GetStringByTable(IDS_LOGINERROR3), GetStringByTable(IDS_LOGINERRORTITLE), MB_ICONERROR);
 	}
 }
-
-void LoginDlg::ShowLoginDlg()
-{
-	m_regisDlg.ShowWindow(SW_HIDE);
-	this->ShowWindow(SW_SHOW);
-}
-
 
 void LoginDlg::ShowRegisDlg()
 {
-	m_regisDlg.ShowWindow(SW_SHOW);
-	this->ShowWindow(SW_HIDE);
+	RegisDlg m_regisDlg;
+	if (RegisDlg::SUCCESS_FLAG == ModalDialog(m_regisDlg))
+		EndDialog(SUCCESS_FLAG);
 }
 
 void LoginDlg::DoDataExchange(CDataExchange* pDX)
@@ -84,7 +62,7 @@ void LoginDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(LoginDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(LoginDlg, BaseDialog)
 	ON_BN_CLICKED(IDOK, &LoginDlg::OnClickLogin)
 	ON_BN_CLICKED(IDC_BUTTON1, &LoginDlg::ShowRegisDlg)
 END_MESSAGE_MAP()

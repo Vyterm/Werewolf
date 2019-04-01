@@ -1,6 +1,7 @@
 #ifndef PACKET_H_INCLUDED
 #define PACKET_H_INCLUDED
 
+#include <afxwin.h>
 #include <deque>
 #include <memory>
 

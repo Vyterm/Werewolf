@@ -183,10 +183,11 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BaseDialog.h" />
     <ClInclude Include="ClientPeer.h" />
     <ClInclude Include="Commands.h" />
+    <ClInclude Include="Handler.h" />
     <ClInclude Include="LoginDlg.h" />
-    <ClInclude Include="MsgHandler.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="RegisDlg.h" />
     <ClInclude Include="RegisVerifyDlg.h" />
@@ -197,9 +198,10 @@
     <ClInclude Include="VytClientDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BaseDialog.cpp" />
     <ClCompile Include="ClientPeer.cpp" />
+    <ClCompile Include="Handler.cpp" />
     <ClCompile Include="LoginDlg.cpp" />
-    <ClCompile Include="MsgHandler.cpp" />
     <ClCompile Include="RegisDlg.cpp" />
     <ClCompile Include="RegisVerifyDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

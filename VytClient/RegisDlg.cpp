@@ -7,25 +7,41 @@
 #include "LoginDlg.h"
 #include "ClientPeer.h"
 #include "Commands.h"
-#include "afxdialogex.h"
+#include "RegisVerifyDlg.h"
 
 using namespace vyt;
 
 // RegisDlg 对话框
 
-IMPLEMENT_DYNAMIC(RegisDlg, CDialogEx)
+IMPLEMENT_DYNAMIC(RegisDlg, BaseDialog)
 
 RegisDlg::RegisDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_REGISDLG, pParent)
+	: BaseDialog(IDD_REGISDLG, pParent), IHandler(command(OpCommand::User), command(UserCommand::Regis))
 	, m_username(_T(""))
 	, m_password(_T(""))
 {
-	m_pLoginDlg = dynamic_cast<LoginDlg*>(pParent);
-	ASSERT(nullptr != m_pLoginDlg);
 }
 
 RegisDlg::~RegisDlg()
 {
+}
+
+void RegisDlg::HandlePacket(vyt::Packet & packet)
+{
+	if (packet->getMessageSize() != 1)
+		MessageBox(_T("非法的消息"), _T("错误"), MB_ICONERROR);
+	else
+	{
+		auto msg = packet->getMessage()[0];
+		if (msg == 0)
+		{
+			RegisVerifyDlg verify(m_username, this);
+			if (RegisVerifyDlg::SUCCESS_FLAG == ModalDialog(verify))
+				EndDialog(SUCCESS_FLAG);
+		}
+		else if (msg == 1)
+			MessageBox(GetStringByTable(IDS_REGISERROR1), GetStringByTable(IDS_REGISERRORTITLE), MB_ICONERROR);
+	}
 }
 
 void RegisDlg::DoDataExchange(CDataExchange* pDX)
@@ -36,7 +52,7 @@ void RegisDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(RegisDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(RegisDlg, BaseDialog)
 	ON_BN_CLICKED(IDOK, &RegisDlg::OnClickRegis)
 	ON_BN_CLICKED(IDC_BUTTON1, &RegisDlg::OnShowLogin)
 END_MESSAGE_MAP()
@@ -54,7 +70,7 @@ void RegisDlg::OnClickRegis()
 
 void RegisDlg::OnShowLogin()
 {
-	m_pLoginDlg->ShowLoginDlg();
+	EndDialog(0);
 }
 
 

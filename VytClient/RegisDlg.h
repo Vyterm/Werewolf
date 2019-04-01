@@ -1,9 +1,10 @@
 ﻿#pragma once
 
-#include <afxdialogex.h>
+#include "BaseDialog.h"
+#include "Handler.h"
+
 // RegisDlg 对话框
-class LoginDlg;
-class RegisDlg : public CDialogEx
+class RegisDlg : public BaseDialog, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(RegisDlg)
 
@@ -16,8 +17,9 @@ public:
 	enum { IDD = IDD_REGISDLG };
 #endif
 
-private:
-	LoginDlg *m_pLoginDlg;
+public:
+	static const INT_PTR SUCCESS_FLAG = 0x12345678;
+	void HandlePacket(vyt::Packet &packet) override;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
