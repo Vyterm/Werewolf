@@ -3,6 +3,7 @@
 
 #include "Packet.h"
 #include <map>
+#include <set>
 #include <afxwin.h>
 
 namespace vyt
@@ -27,7 +28,7 @@ namespace vyt
 	public:
 		static NetHandler& Get() { return m_instance; }
 	private:
-		std::map<vyt::command, std::map<vyt::command, IHandler*>> m_handlers;
+		std::map<vyt::command, std::map<vyt::command, std::set<IHandler*>>> m_handlers;
 	public:
 		void DispatchPacket(Packet &packet);
 		void RegisterHandler(vyt::command opCommand, vyt::command subCommand, IHandler &handler);

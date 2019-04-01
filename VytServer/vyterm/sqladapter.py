@@ -8,7 +8,7 @@ def sqlprotect(func):
     def protect(self, query: str):
         try:
             r = func(self, query)
-            return r if r else True
+            return r if r is not None else True
         except Exception as e:
             print(e)
             self.sql.rollback()
@@ -39,7 +39,7 @@ class SqlAdapter:
 
 if __name__ == '__main__':
     adapter = SqlAdapter(db='test', user='root', password='1JXahbu230x1Zehim88t')
-    [print(row) for row in adapter.select("Select * from user_table")]
-    m = hashlib.md5()
-    m.update('885546845'.encode())
-    print(m.hexdigest())
+    # [print(row) for row in adapter.select("Select * from user_table")]
+    # m = hashlib.md5()
+    # m.update('885546845'.encode())
+    print(adapter.select("select `user_name` from `user_table` where `user_number` = %s" % str(18986251734))[0][0])

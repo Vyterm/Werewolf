@@ -184,14 +184,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BaseDialog.h" />
+    <ClInclude Include="ChatroomDlg.h" />
     <ClInclude Include="ClientPeer.h" />
     <ClInclude Include="Commands.h" />
+    <ClInclude Include="FriendDlg.h" />
     <ClInclude Include="Handler.h" />
     <ClInclude Include="LoginDlg.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="RegisDlg.h" />
     <ClInclude Include="RegisVerifyDlg.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="RoomlistDlg.h" />
+    <ClInclude Include="SmartTabCtrl.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="VytClient.h" />
@@ -199,11 +203,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseDialog.cpp" />
+    <ClCompile Include="ChatroomDlg.cpp" />
     <ClCompile Include="ClientPeer.cpp" />
+    <ClCompile Include="FriendDlg.cpp" />
     <ClCompile Include="Handler.cpp" />
     <ClCompile Include="LoginDlg.cpp" />
     <ClCompile Include="RegisDlg.cpp" />
     <ClCompile Include="RegisVerifyDlg.cpp" />
+    <ClCompile Include="RoomlistDlg.cpp" />
+    <ClCompile Include="SmartTabCtrl.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

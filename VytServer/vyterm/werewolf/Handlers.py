@@ -30,6 +30,7 @@ class UserCommand(Enum):
 class LobbyCommand(Enum):
     Join = 0
     Chat = 1
+    Leave = 2
 
 
 class FriendCommand(Enum):
@@ -53,29 +54,28 @@ class Caches(object):
     def __init__(self):
         self.mysql = SqlAdapter(db="werewolf", password="1JXahbu230x1Zehim88t")
         self.dbPlayers = {}
+        self.friends = {}
         for player in self.mysql.select("select `user_number`, `user_name`, `user_pass` from `user_table`;"):
             phone, name, md5_pass = player
-            self.dbPlayers[str(phone)] = (name, md5_pass)
+            self.dbPlayers[str(phone)] = md5_pass
+            self.friends[phone] = []
 
-        self.friends = {
-            "Vyterm": ["Fromex"],
-            "Fromex": [],
-            "Yitoru": [],
-        }
-
-    def __del__(self):
-        # This method never execute in multi-thread content, pass this method and direct insert into sql is the solution
-        pass
+        for connection in self.mysql.select("select * from `friend_table`;"):
+            uid, fuid = connection
+            uphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % uid)
+            fphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % fuid)
+            self.friends[uphone].append(fphone)
+            self.friends[fphone].append(uphone)
 
     def contains(self, phone: str):
         return phone in self.dbPlayers
 
-    def append_user(self, phone: str, username: str, password: str):
+    def append_user(self, phone: str, password: str):
         if phone in self.dbPlayers:
             return False
         self.dbPlayers[phone] = md5str(password)
         assert self.mysql.execute("insert into `user_table`(user_number, user_name, user_pass) values "
-                                  "(%s, '%s', '%s')" % (phone, username, self.dbPlayers[phone]))
+                                  "(%s, '%s', '%s')" % (phone, phone, self.dbPlayers[phone]))
         return True
 
     def remove_user(self, phone: str):
@@ -86,10 +86,14 @@ class Caches(object):
         return True
 
     def match(self, phone: str, password: str):
-        return self.dbPlayers[phone] == md5str(password)
+        password = md5str(password)
+        return self.dbPlayers[phone] == password
 
-    def friend_names(self, username):
-        return self.friends[username]
+    def friend_names(self, userphone):
+        return self.friends[userphone]
+
+    def get_user_name(self, userphone):
+        return self.mysql.select("select `user_name` from `user_table` where `user_number` = %s" % userphone)[0][0]
 
     def get_user_info(self, userphone):
         count_row, = self.mysql.select(
@@ -179,7 +183,7 @@ class UserHandler(Handler):
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 1))
         # 添加新用户并给客户端发送注册成功的消息 #MARK1：保存的验证码第二项为用户名，即t[1]
         else:
-            Caches().append_user(phone, phone, self.verifyphones[phone][1])
+            Caches().append_user(phone, self.verifyphones[phone][1])
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
 
     @property
@@ -200,7 +204,7 @@ class LobbyHandler(Handler):
     def join(self, client, packet):
         if client not in _Client2Player:
             return
-        lobby_id = struct.unpack('i', packet)
+        lobby_id, = struct.unpack('i', packet)
         if lobby_id not in self.Lobbys:
             self.Lobbys[lobby_id] = []
         player = _Client2Player[client]
@@ -211,18 +215,31 @@ class LobbyHandler(Handler):
             client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 1))
         pass
 
+    def leave(self, client, packet):
+        if client not in _Client2Player:
+            return
+        lobby_id, = struct.unpack('i', packet)
+        if lobby_id not in self.Lobbys:
+            return
+        player = _Client2Player[client]
+        if player not in self.Lobbys[lobby_id]:
+            return
+        self.Lobbys[lobby_id].remove(player)
+        pass
+
     def lobby_chat(self, client, packet):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        lobby_id = struct.unpack('i', packet[:4])
+        lobby_id, = struct.unpack('i', packet[:4])
         if lobby_id not in self.Lobbys:
             return
         if player not in self.Lobbys[lobby_id]:
             return
         chat = bytes_to_string(packet[4:])
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, string_to_bytes(chat))
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, struct.pack('i', lobby_id) +
+                                   strings_to_bytes(player, chat))
         pass
 
     def __init__(self):
@@ -232,6 +249,7 @@ class LobbyHandler(Handler):
     def handlers(self):
         return {
             LobbyCommand.Join.value: self.join,
+            LobbyCommand.Leave.value: self.leave,
             LobbyCommand.Chat.value: self.lobby_chat,
         }
 
@@ -325,8 +343,8 @@ if __name__ == '__main__':
     assert id(Caches.get()) == id(Caches.get())
     print(Caches.get().get_user_info(18986251734))
     assert not Caches().remove_user(str(17708807700))
-    assert Caches().append_user(str(17708807700), 'TestPlayer', 'Crazy')
-    assert not Caches().append_user(str(17708807700), 'TestPlayer', 'Crazy')
+    assert Caches().append_user(str(17708807700), 'Crazy')
+    assert not Caches().append_user(str(17708807700), 'Crazy')
     assert Caches().match(str(17708807700), 'Crazy')
     assert Caches().remove_user(str(17708807700))
     print("All tests of werewolf.Handlers passed.")

@@ -72,11 +72,12 @@
 
 if __name__ == '__main__':
     # print('123456789'.isdigit())
-    ia = {x: x for x in range(20)}
-    for i in ia:
-        if i % 2:
-            ia.pop(i)
+    # ia = {x: x for x in range(20)}
+    # for i in ia:
+    #     if i % 2:
+    #         ia.pop(i)
+    # print(ia)
+    print("%d" % 2)
 
-    print(ia)
 
 

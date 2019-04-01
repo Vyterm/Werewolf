@@ -25,9 +25,11 @@ void vyt::NetHandler::DispatchPacket(Packet & packet)
 	if (m_handlers.end() != m_handlers.find(packet->getOpCommand()))
 	{
 		auto &subHandlers = m_handlers[packet->getOpCommand()];
-		if (subHandlers.end() != subHandlers.find(packet->getSubCommand()) &&
-			nullptr != subHandlers[packet->getSubCommand()])
-			subHandlers[packet->getSubCommand()]->HandlePacket(packet);
+		if (subHandlers.end() != subHandlers.find(packet->getSubCommand()))
+		{
+			for (auto &pHandler : subHandlers[packet->getSubCommand()])
+				pHandler->HandlePacket(packet);
+		}
 		else
 			LogInvalidPacket(packet);
 	}
@@ -37,11 +39,13 @@ void vyt::NetHandler::DispatchPacket(Packet & packet)
 
 void vyt::NetHandler::RegisterHandler(vyt::command opCommand, vyt::command subCommand, IHandler & handler)
 {
-	m_handlers[opCommand][subCommand] = &handler;
+	m_handlers[opCommand][subCommand].emplace(&handler);
 }
 
 void vyt::NetHandler::UnregisterHandler(vyt::command opCommand, vyt::command subCommand, IHandler & handler)
 {
-	if (m_handlers[opCommand][subCommand] == &handler)
-		m_handlers[opCommand][subCommand] = nullptr;
+	auto &handlers = m_handlers[opCommand][subCommand];
+	auto pHandler = handlers.find(&handler);
+	if (handlers.end() != pHandler)
+		handlers.erase(pHandler);
 }
