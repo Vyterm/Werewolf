@@ -51,12 +51,11 @@ _handleLock = Lock()
 @singleton
 class Caches(object):
     def __init__(self):
-        self.mysql = SqlAdapter(db="test", password="1JXahbu230x1Zehim88t")
+        self.mysql = SqlAdapter(db="werewolf", password="1JXahbu230x1Zehim88t")
         self.dbPlayers = {}
         for player in self.mysql.select("select `user_number`, `user_name`, `user_pass` from `user_table`;"):
             phone, name, md5_pass = player
-            phone = int(phone)
-            self.dbPlayers[phone] = (name, md5_pass)
+            self.dbPlayers[str(phone)] = (name, md5_pass)
 
         self.friends = {
             "Vyterm": ["Fromex"],
@@ -68,25 +67,25 @@ class Caches(object):
         # This method never execute in multi-thread content, pass this method and direct insert into sql is the solution
         pass
 
-    def contains(self, phone: int):
+    def contains(self, phone: str):
         return phone in self.dbPlayers
 
-    def append_user(self, phone: int, username: str, password: str):
+    def append_user(self, phone: str, username: str, password: str):
         if phone in self.dbPlayers:
             return False
         self.dbPlayers[phone] = md5str(password)
         assert self.mysql.execute("insert into `user_table`(user_number, user_name, user_pass) values "
-                                  "(%d, '%s', '%s')" % (phone, username, self.dbPlayers[phone]))
+                                  "(%s, '%s', '%s')" % (phone, username, self.dbPlayers[phone]))
         return True
 
-    def remove_user(self, phone: int):
+    def remove_user(self, phone: str):
         if phone not in self.dbPlayers:
             return False
         self.dbPlayers.pop(phone)
-        assert self.mysql.execute("delete from `user_table` where `user_number`=%d" % (phone,))
+        assert self.mysql.execute("delete from `user_table` where `user_number`=%s" % (phone,))
         return True
 
-    def match(self, phone: int, password: str):
+    def match(self, phone: str, password: str):
         return self.dbPlayers[phone] == md5str(password)
 
     def friend_names(self, username):
@@ -120,7 +119,7 @@ class Handler(object):
 
 class UserHandler(Handler):
     def __init__(self):
-        self.verifycodes = {}
+        self.verifyphones = {}
 
     @staticmethod
     def login(client, packet):
@@ -158,8 +157,8 @@ class UserHandler(Handler):
         # 若没有注册则向客户端发送注册成功的消息
         else:
             code = randint(100000, 999999)
-            # MARK1：保存验证码，用户名，密码，创建时间
-            self.verifycodes[code] = (username, password, datetime.now())
+            # MARK1：保存用户名，验证码，密码，创建时间
+            self.verifyphones[username] = (str(code), password, datetime.now())
             # 发送验证码短信
             aliyunapi.AliyunAdapter().SendSms(username, 'Vyterm', 'SMS_150577820', code)
             # 给客户端发送验证码短信已发送的消息
@@ -167,23 +166,21 @@ class UserHandler(Handler):
 
     def verify(self, client, packet):
         # 将超过五分钟的验证码从列表中删除 #MARK1：保存的验证码第三项为创建时间，即t[2]
-        invalidcodes = [code for code, t in self.verifycodes.items() if t[2] - datetime.now() > timedelta(minutes=5)]
-        for code in invalidcodes:
-            self.verifycodes.pop(code)
+        invalidphones = [p for p, t in self.verifyphones.items() if t[2] - datetime.now() > timedelta(minutes=5)]
+        for phone in invalidphones:
+            self.verifyphones.pop(phone)
         # 解包获取要验证的手机号与验证码
         phone, code = bytes_to_strings(packet)
         # 判断手机号及验证码是否有效
-        if not code.isdigit() or not phone.isdigit():
+        if not phone.isdigit() or not code.isdigit():
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 1))
+        # 如果手机号不存在说明验证码 #MARK1：保存的验证码第一项为用户名，即t[1]
+        elif phone not in self.verifyphones or self.verifyphones[phone][0] != code:
+            client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 1))
+        # 添加新用户并给客户端发送注册成功的消息 #MARK1：保存的验证码第二项为用户名，即t[1]
         else:
-            code = int(code)
-            # 如果验证码不存在则表示验证码错误或者已失效，如果验证码与手机号不匹配则表示客户端有恶意:) #MARK1：保存的验证码第一项为用户名，即t[1]
-            if code not in self.verifycodes or self.verifycodes[code][0] != phone:
-                client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 2))
-            # 添加新用户并给客户端发送注册成功的消息 #MARK1：保存的验证码第二项为用户名，即t[1]
-            else:
-                Caches().append_user(int(phone), phone, md5str(self.verifycodes[code][1]))
-                client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
+            Caches().append_user(phone, phone, self.verifyphones[phone][1])
+            client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
 
     @property
     def handlers(self):
@@ -327,11 +324,11 @@ if __name__ == '__main__':
     # assert id(Caches.get()) == id(Caches())
     assert id(Caches.get()) == id(Caches.get())
     print(Caches.get().get_user_info(18986251734))
-    assert not Caches().remove_user(17708807700)
-    assert Caches().append_user(17708807700, 'TestPlayer', 'Crazy')
-    assert not Caches().append_user(17708807700, 'TestPlayer', 'Crazy')
-    assert Caches().match(17708807700, 'Crazy')
-    assert Caches().remove_user(17708807700)
+    assert not Caches().remove_user(str(17708807700))
+    assert Caches().append_user(str(17708807700), 'TestPlayer', 'Crazy')
+    assert not Caches().append_user(str(17708807700), 'TestPlayer', 'Crazy')
+    assert Caches().match(str(17708807700), 'Crazy')
+    assert Caches().remove_user(str(17708807700))
     print("All tests of werewolf.Handlers passed.")
 else:
     Caches.get()
