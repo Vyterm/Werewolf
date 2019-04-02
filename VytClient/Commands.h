@@ -46,6 +46,7 @@ enum class FriendCommand
 	File = 5,
 	Video = 6,
 	List = 7,
+	Access = 8,
 };
 
 #endif

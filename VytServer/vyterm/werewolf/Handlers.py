@@ -208,6 +208,29 @@ class LobbyHandler(Handler):
 
 
 class FriendHandler(Handler):
+    def __init__(self):
+        self.access_connections = {}
+
+    def create_connection(self, sp, tp):
+        if sp not in self.access_connections:
+            self.access_connections[sp] = {}
+        if tp not in self.access_connections:
+            self.access_connections[tp] = {}
+        self.access_connections[sp][Caches().get_user_name(tp)] = tp
+        self.access_connections[tp][Caches().get_user_name(sp)] = sp
+
+    def delete_connection(self, player):
+        if player in self.access_connections:
+            self.access_connections.pop(player)
+        player = Caches().get_user_name(player)
+        for connection in self.access_connections:
+            if player in connection:
+                connection.pop(player)
+
+    def get_connection(self, sp, tpn):
+        return self.access_connections[sp][tpn] \
+            if sp in self.access_connections and tpn in self.access_connections[sp] else None
+
     def online(self, client, packet):
         pass
 
@@ -237,10 +260,36 @@ class FriendHandler(Handler):
         pass
 
     def del_friend(self, client, packet):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        name = bytes_to_string(packet)
+        if player in self.access_connections and name in self.access_connections[player]:
+            target = self.access_connections[player][name]
+            self.access_connections[player].pop(name)
+            self.access_connections[target].pop(Caches().get_user_name(player))
+        else:
+            target = Caches().search_user_by_name(name)
+            if target is None:
+                return
+        if Caches().is_friend(player, target):
+            Caches().delete_connection(player, target)
+            client.send(OpCommand.Friend.value, FriendCommand.Del.value, player_to_namebytes(target))
+            if target in _Player2Client:
+                _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Del.value,
+                                            player_to_namebytes(player))
         pass
 
     def private_chat(self, client, packet):
-        pass
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        name, chat = bytes_to_strings(packet)
+        target = self.get_connection(player, name)
+        if target is None:
+            return
+        _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Chat.value,
+                                    player_to_namebytes(player) + string_to_bytes(chat))
 
     def file_trans(self, client, packet):
         pass
@@ -258,9 +307,28 @@ class FriendHandler(Handler):
         friends = Caches().friend_names(_Client2Player[client])
         count = struct.pack('i', len(friends))
         friends = [player_to_namebytes(friend) for friend in friends]
-        friends = reduce(lambda l, r: l+r, [bytes()] + friends)
+        friends = reduce(lambda l, r: l + r, [bytes()] + friends)
         client.send(OpCommand.Friend.value, FriendCommand.List.value,
                     count + friends)
+        pass
+
+    def access_chat(self, client, packet):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        tag, = struct.unpack('i', packet[:4])
+        name = bytes_to_string(packet[4:])
+        target = Caches().search_user_by_name(name)
+        if not target:
+            client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 1))
+        elif not Caches().is_friend(player, target):
+            client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 2))
+        elif target not in _Player2Client:
+            client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 3))
+        else:
+            self.create_connection(player, target)
+            client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
+            _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
         pass
 
     @property
@@ -273,9 +341,18 @@ class FriendHandler(Handler):
             FriendCommand.File.value: self.file_trans,
             FriendCommand.Video.value: self.video_trans,
             FriendCommand.List.value: self.friend_list,
+            FriendCommand.Access.value: self.access_chat,
         }
 
     def logout(self, client):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        self.delete_connection(player)
+        for friend in Caches().friend_names(player):
+            if friend in _Player2Client:
+                _Player2Client[friend].send(OpCommand.Friend.value, FriendCommand.Offline.value,
+                                            player_to_namebytes(player))
         pass
 
 

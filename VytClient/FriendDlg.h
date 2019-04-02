@@ -17,6 +17,9 @@ public:
 	enum { IDD = IDD_H_FRIEND };
 #endif
 
+private:
+	CString m_username;
+	int m_friendID;
 public:
 	void HandlePacket(vyt::Packet &packet) override;
 
@@ -27,4 +30,7 @@ protected:
 public:
 	CListCtrl m_friends;
 	afx_msg void OnShowDetails();
+	afx_msg void InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnChatToFriend();
+	afx_msg void OnDeleteFriend();
 };

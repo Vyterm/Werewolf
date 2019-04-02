@@ -41,6 +41,7 @@ class FriendCommand(Enum):
     File = 5
     Video = 6
     List = 7
+    Access = 8
 
 
 @get_instance

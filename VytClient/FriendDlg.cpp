@@ -8,6 +8,7 @@
 #include "ClientPeer.h"
 #include "Commands.h"
 #include "UserInfoDlg.h"
+#include "FriendChatDlg.h"
 using namespace vyt;
 
 // FriendDlg 对话框
@@ -33,9 +34,8 @@ void FriendDlg::HandlePacket(vyt::Packet & packet)
 {
 	if (packet->getOpCommand() == command(OpCommand::User) && packet->getSubCommand() == command(UserCommand::GetName))
 	{
-		CString username;
-		packet->Decode("s", &username);
-		this->SetDlgItemText(IDC_HF_USERNAME, username);
+		packet->Decode("s", &m_username);
+		this->SetDlgItemText(IDC_HF_USERNAME, m_username);
 	}
 	if (packet->getOpCommand() == command(OpCommand::Friend))
 	{
@@ -77,6 +77,9 @@ void FriendDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(FriendDlg, BaseDialog)
 	ON_BN_CLICKED(IDC_HF_USERNAME, &FriendDlg::OnShowDetails)
+	ON_NOTIFY(NM_RCLICK, IDC_HFU_FRIENDLIST, &FriendDlg::InteractionWithFriend)
+	ON_COMMAND(ID_HF_CHAT, &FriendDlg::OnChatToFriend)
+	ON_COMMAND(ID_HF_DEL, &FriendDlg::OnDeleteFriend)
 END_MESSAGE_MAP()
 
 
@@ -89,4 +92,32 @@ void FriendDlg::OnShowDetails()
 	GetDlgItemText(IDC_HF_USERNAME, username);
 	UserInfoDlg infodlg(username, this);
 	ModalDialog(infodlg);
+}
+
+
+void FriendDlg::InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	
+	m_friendID = pNMItemActivate->iItem;
+	if (-1 == m_friendID) return;
+	CMenu menu;
+	menu.LoadMenu(IDR_HOMETRACK);
+	POINT pos;
+	GetCursorPos(&pos);
+	menu.GetSubMenu(1)->TrackPopupMenu(TPM_LEFTALIGN, pos.x, pos.y, this);
+
+	*pResult = 0;
+}
+
+
+void FriendDlg::OnChatToFriend()
+{
+	FriendChatDlg::Create(m_username, m_friends.GetItemText(m_friendID, 0), this);
+}
+
+
+void FriendDlg::OnDeleteFriend()
+{
+	// TODO: 在此添加命令处理程序代码
 }
