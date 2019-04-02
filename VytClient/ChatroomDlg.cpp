@@ -105,15 +105,27 @@ void PlayerListHandler::PlayerLeave(CString player)
 		}
 }
 
+void PlayerListHandler::PlayerRename(CString oldname, CString newname)
+{
+	for (int i = 0; i < m_players.GetItemCount(); ++i)
+		if (m_players.GetItemText(i, 0) == oldname)
+		{
+			m_players.SetItemText(i, 0, newname);
+			break;
+		}
+}
+
 PlayerListHandler::PlayerListHandler(CListCtrl & players)
 	: IHandler(command(OpCommand::Lobby), command(LobbyCommand::Join)), m_players(players)
 {
 	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Rename), *this);
 }
 
 PlayerListHandler::~PlayerListHandler()
 {
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Rename), *this);
 }
 
 void PlayerListHandler::HandlePacket(vyt::Packet & packet)
@@ -127,6 +139,12 @@ void PlayerListHandler::HandlePacket(vyt::Packet & packet)
 	else if (packet->getSubCommand() == command(LobbyCommand::Leave))
 	{
 		PlayerLeave(player);
+	}
+	else if (packet->getSubCommand() == command(LobbyCommand::Rename))
+	{
+		CString newname;
+		packet->Decode("ss", nullptr, &newname);
+		PlayerRename(player, newname);
 	}
 }
 

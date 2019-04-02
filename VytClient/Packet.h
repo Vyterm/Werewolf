@@ -122,7 +122,9 @@ namespace vyt
 		template <typename T>
 		static void SetBuffer(va_list &args, pByte &pBuffer)
 		{
-			*va_arg(args, T*) = *(T*)pBuffer;
+			T* pointer = va_arg(args, T*);
+			if (nullptr != pointer)
+				*pointer = *(T*)pBuffer;
 			pBuffer += sizeof(T);
 		}
 	public:
@@ -142,7 +144,9 @@ namespace vyt
 					TCHAR &cache = *(TCHAR*)(pBuffer+stringLength);
 					TCHAR tmp = cache;
 					cache = _T('\0');
-					va_arg(args, CString*)->SetString((LPCTSTR)pBuffer);
+					auto pointerString = va_arg(args, CString*);
+					if (nullptr != pointerString)
+						pointerString->SetString((LPCTSTR)pBuffer);
 					cache = tmp;
 					pBuffer += stringLength;
 					break;

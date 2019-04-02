@@ -24,6 +24,7 @@ RoomlistDlg::~RoomlistDlg()
 void RoomlistDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_HR_ROOMLIST, m_roomlist);
 }
 
 

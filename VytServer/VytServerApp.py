@@ -53,9 +53,9 @@ def RecvProc(*args, **kwargs):
             packet = client.recv(packetsize)
             opCommand,subCommand, = struct.unpack('ii', packet[:8])
             packet = packet[8:]
-            print("收到来自客户端的数据包，大小为" + str(packetsize)
-                  + "\n主操作码为：" + str(opCommand)
-                  + "\n副操作码为：" + str(subCommand))
+            print("收到来自客户端的数据包，大小为" + str(packetsize).ljust(5, ' ')
+                  + "  主操作码为：" + str(opCommand).ljust(2, ' ')
+                  + "  副操作码为：" + str(subCommand).ljust(2, ' '))
             handle_packet(client, opCommand, subCommand, packet)
         except ConnectionResetError:
             # 客户端断开连接后会出现异常

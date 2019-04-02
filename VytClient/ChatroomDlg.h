@@ -9,6 +9,7 @@ private:
 	CListCtrl &m_players;
 	void PlayerJoin(CString player);
 	void PlayerLeave(CString player);
+	void PlayerRename(CString oldname, CString newname);
 public:
 	PlayerListHandler(CListCtrl &players);
 	virtual ~PlayerListHandler();
