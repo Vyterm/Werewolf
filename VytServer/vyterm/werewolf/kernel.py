@@ -57,12 +57,16 @@ class Caches(object):
 
         for connection in self.mysql.select("select * from `friend_table`;"):
             uid, fuid = connection
-            uphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % uid)
-            fphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % fuid)
+            uphone = str(self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % uid)[0][0])
+            fphone = str(self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % fuid)[0][0])
             if fphone not in self.friends[uphone]:
                 self.friends[uphone].append(fphone)
             if uphone not in self.friends[fphone]:
                 self.friends[fphone].append(uphone)
+
+    def __getuid(self, userphone: str):
+        uid = self.mysql.select("select `user_id` from `user_table` where `user_number` = %s" % userphone)
+        return uid[0][0] if uid else None
 
     def contains(self, phone: str):
         return phone in self.dbPlayers
@@ -71,6 +75,7 @@ class Caches(object):
         if phone in self.dbPlayers:
             return False
         self.dbPlayers[phone] = md5str(password)
+        self.friends[phone] = []
         assert self.mysql.execute("insert into `user_table`(user_number, user_name, user_pass) values "
                                   "(%s, '%s', '%s')" % (phone, phone, self.dbPlayers[phone]))
         return True
@@ -78,7 +83,9 @@ class Caches(object):
     def remove_user(self, phone: str):
         if phone not in self.dbPlayers:
             return False
+        # ToDo: 删除所有关联的好友
         self.dbPlayers.pop(phone)
+        self.friends.pop(phone)
         assert self.mysql.execute("delete from `user_table` where `user_number`=%s" % (phone,))
         return True
 
@@ -86,8 +93,31 @@ class Caches(object):
         password = md5str(password)
         return self.dbPlayers[phone] == password
 
+    def is_friend(self, userphone: str, friendphone: str):
+        return friendphone in self.friends[userphone]
+
     def friend_names(self, userphone: str):
         return self.friends[userphone]
+
+    def create_connection(self, userphone: str, friendphone: str):
+        uid = self.__getuid(userphone)
+        fid = self.__getuid(friendphone)
+        if not uid or not fid:
+            return
+        self.mysql.execute("insert into `friend_table`(`self_user_id`, `friend_user_id`) values (%d, %d);" % (uid, fid))
+        self.friends[userphone].append(friendphone)
+        self.friends[friendphone].append(userphone)
+
+    def delete_connection(self, userphone: str, friendphone: str):
+        uid = self.__getuid(userphone)
+        fid = self.__getuid(friendphone)
+        if not uid or not fid:
+            return
+        self.mysql.execute("delete from `friend_table`"
+                           " where (`self_user_id` = %d and `friend_user_id` = %d)"
+                           " or (`self_user_id` = %d and `friend_user_id` = %d);" % (uid, fid, fid, uid))
+        self.friends[userphone].remove(friendphone)
+        self.friends[friendphone].remove(userphone)
 
     def get_user_name(self, userphone: str):
         return self.mysql.select("select `user_name` from `user_table` where `user_number` = %s" % userphone)[0][0]
@@ -139,4 +169,9 @@ class Handler(object):
 
 
 if __name__ == '__main__':
+    Caches().create_connection('18986251734', '0')
+    assert Caches().is_friend('18986251734', '0')
+    assert Caches().is_friend('0', '18986251734')
+    Caches().delete_connection('18986251734', '0')
+    print("All tests of Werewolf.kernel passed!")
     pass

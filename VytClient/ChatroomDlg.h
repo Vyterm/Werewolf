@@ -29,6 +29,8 @@ public:
 	enum { IDD = IDD_H_CHATROOM };
 #endif
 
+private:
+	int m_friendID;
 public:
 	void HandlePacket(vyt::Packet &packet);
 
@@ -46,4 +48,5 @@ public:
 	CEdit m_chatscroll;
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSelectPlayer(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnAddFriend();
 };

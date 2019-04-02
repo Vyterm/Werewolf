@@ -53,6 +53,7 @@ void ChatroomDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(ChatroomDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON2, &ChatroomDlg::DoSend)
 	ON_NOTIFY(NM_RCLICK, IDC_HCR_PLAYERLIST, &ChatroomDlg::OnSelectPlayer)
+	ON_COMMAND(ID_HC_FRIEND, &ChatroomDlg::OnAddFriend)
 END_MESSAGE_MAP()
 
 
@@ -152,6 +153,19 @@ void PlayerListHandler::HandlePacket(vyt::Packet & packet)
 void ChatroomDlg::OnSelectPlayer(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
-	if (-1 == pNMItemActivate->iItem) return;
+	m_friendID = pNMItemActivate->iItem;
+	if (-1 == m_friendID) return;
+	CMenu menu;
+	menu.LoadMenu(IDR_HOMETRACK);
+	POINT point;
+	GetCursorPos(&point);
+	menu.GetSubMenu(2)->TrackPopupMenu(TPM_LEFTALIGN, point.x, point.y, this);
 	*pResult = 0;
+}
+
+
+void ChatroomDlg::OnAddFriend()
+{
+	if (-1 == m_friendID || m_friendID > m_players.GetItemCount()) return;
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Add), "s", m_players.GetItemText(m_friendID, 0)));
 }

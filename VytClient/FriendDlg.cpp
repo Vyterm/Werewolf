@@ -18,12 +18,15 @@ FriendDlg::FriendDlg(CWnd* pParent /*=nullptr*/)
 	: BaseDialog(IDD_H_FRIEND, pParent), IHandler(command(OpCommand::User), command(UserCommand::GetName))
 {
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
+	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
 	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::User), command(UserCommand::GetName)));
+	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::List)));
 }
 
 FriendDlg::~FriendDlg()
 {
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
+	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
 }
 
 void FriendDlg::HandlePacket(vyt::Packet & packet)
@@ -33,6 +36,35 @@ void FriendDlg::HandlePacket(vyt::Packet & packet)
 		CString username;
 		packet->Decode("s", &username);
 		this->SetDlgItemText(IDC_HF_USERNAME, username);
+	}
+	if (packet->getOpCommand() == command(OpCommand::Friend))
+	{
+		if (packet->getSubCommand() == command(FriendCommand::List))
+		{
+			CStringA packetFormat = "i";
+			int count;
+			packet->Decode(packetFormat, &count);
+			CString *buffers = new CString[count];
+			for (int i = 0; i < count; ++i)
+				packetFormat += "s";
+			packet->Decode(packetFormat, nullptr, buffers);
+			for (int i = 0; i < count; ++i)
+				m_friends.InsertItem(i, buffers[i]);
+			delete[] buffers;
+		}
+		else if (packet->getSubCommand() == command(FriendCommand::Add))
+		{
+			if (1 == packet->getMessage()[0])
+				MessageBox(_T("添加好友失败，可能是因为用户名错误或对方不在线"));
+			else if (0 == packet->getMessage()[0])
+			{
+				CString friendName;
+				packet->Decode("bs", nullptr, &friendName);
+				m_friends.InsertItem(m_friends.GetItemCount(), friendName);
+				friendName.Format(_T("已添加%s为好友！"), friendName);
+				MessageBox(friendName);
+			}
+		}
 	}
 }
 

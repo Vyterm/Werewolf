@@ -3,8 +3,8 @@ from vyterm.conversion import *
 from vyterm.api3_rd import aliyunapi
 from threading import Lock
 from random import randint
+from functools import reduce
 from datetime import *
-
 
 _Client2Player = {}
 _Player2Client = {}
@@ -78,6 +78,8 @@ class UserHandler(Handler):
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 1))
         # 添加新用户并给客户端发送注册成功的消息 #MARK1：保存的验证码第二项为用户名，即t[1]
         else:
+            _Client2Player[client] = phone
+            _Player2Client[phone] = client
             Caches().append_user(phone, self.verifyphones[phone][1])
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
 
@@ -149,7 +151,7 @@ class LobbyHandler(Handler):
         if player in self.Lobbys[lobby_id]:
             return
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(player))
             client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(p))
         client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(player))
         self.Lobbys[lobby_id].append(player)
@@ -214,18 +216,24 @@ class FriendHandler(Handler):
         if client not in _Client2Player:
             return
         sender = _Client2Player[client]
-        is_direct = struct.unpack('B', packet[:1])
-        user_tag = string_to_bytes(packet[1:])
+        user_tag = bytes_to_string(packet)
+        is_direct = user_tag.isdigit() and len(user_tag) == 11
         if is_direct:
             player = Caches().search_user_by_phone(user_tag)
         else:
             player = Caches().search_user_by_name(user_tag)
-        if player in _Player2Client:
-            _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
-                                        struct.pack('B', 0) + string_to_bytes(sender))
-            client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 0) + string_to_bytes(player))
-        else:
+        if player not in _Player2Client:
             client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 1))
+        elif sender == player:
+            client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 2))
+        elif Caches().is_friend(sender, player):
+            client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 3))
+        else:
+            Caches().create_connection(sender, player)
+            _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
+                                        struct.pack('B', 0) + player_to_namebytes(sender))
+            client.send(OpCommand.Friend.value, FriendCommand.Add.value,
+                        struct.pack('B', 0) + player_to_namebytes(player))
         pass
 
     def del_friend(self, client, packet):
@@ -244,7 +252,15 @@ class FriendHandler(Handler):
                     + strings_to_bytes("Test", "Video"))
         pass
 
-    def friend_list(self, client, packet):
+    @staticmethod
+    def friend_list(client, packet):
+        assert len(packet) == 0
+        friends = Caches().friend_names(_Client2Player[client])
+        count = struct.pack('i', len(friends))
+        friends = [player_to_namebytes(friend) for friend in friends]
+        friends = reduce(lambda l, r: l+r, [bytes()] + friends)
+        client.send(OpCommand.Friend.value, FriendCommand.List.value,
+                    count + friends)
         pass
 
     @property
