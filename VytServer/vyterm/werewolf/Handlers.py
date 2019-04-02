@@ -218,12 +218,13 @@ class LobbyHandler(Handler):
         if lobby_id not in self.Lobbys:
             self.Lobbys[lobby_id] = []
         player = _Client2Player[client]
-        if player not in self.Lobbys[lobby_id]:
-            for p in self.Lobbys[lobby_id]:
-                _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
-            self.Lobbys[lobby_id].append(player)
-        else:
-            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 1))
+        if player in self.Lobbys[lobby_id]:
+            return
+        for p in self.Lobbys[lobby_id]:
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
+            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(p))
+        client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
+        self.Lobbys[lobby_id].append(player)
         pass
 
     def leave(self, client, packet):
@@ -270,9 +271,9 @@ class LobbyHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        for lobby in self.Lobbys.values():
+        for lid, lobby in self.Lobbys.items():
             if player in lobby:
-                lobby.remove(player)
+                self.leave(client, struct.pack('i', lid))
         pass
 
 

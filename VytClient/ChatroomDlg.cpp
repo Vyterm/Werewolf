@@ -15,6 +15,7 @@ IMPLEMENT_DYNAMIC(ChatroomDlg, CDialogEx)
 
 ChatroomDlg::ChatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_H_CHATROOM, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
+	, m_playerHandler(m_players)
 	, m_message(_T(""))
 	, m_chats(_T(""))
 {
@@ -42,7 +43,7 @@ void ChatroomDlg::HandlePacket(vyt::Packet & packet)
 void ChatroomDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST1, m_players);
+	DDX_Control(pDX, IDC_HCR_PLAYERLIST, m_players);
 	DDX_Text(pDX, IDC_EDIT1, m_message);
 	DDX_Text(pDX, IDC_HCR_CHAT, m_chats);
 	DDX_Control(pDX, IDC_HCR_CHAT, m_chatscroll);
@@ -51,6 +52,7 @@ void ChatroomDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(ChatroomDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON2, &ChatroomDlg::DoSend)
+	ON_NOTIFY(NM_RCLICK, IDC_HCR_PLAYERLIST, &ChatroomDlg::OnSelectPlayer)
 END_MESSAGE_MAP()
 
 
@@ -76,4 +78,62 @@ BOOL ChatroomDlg::PreTranslateMessage(MSG* pMsg)
 			DoSend();
 
 	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+BOOL ChatroomDlg::OnInitDialog()
+{
+	__super::OnInitDialog();
+
+	m_players.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 异常: OCX 属性页应返回 FALSE
+}
+
+void PlayerListHandler::PlayerJoin(CString player)
+{
+	m_players.InsertItem(m_players.GetItemCount(), player);
+}
+
+void PlayerListHandler::PlayerLeave(CString player)
+{
+	for (int i = 0; i < m_players.GetItemCount(); ++i)
+		if (m_players.GetItemText(i, 0) == player)
+		{
+			m_players.DeleteItem(i);
+			break;
+		}
+}
+
+PlayerListHandler::PlayerListHandler(CListCtrl & players)
+	: IHandler(command(OpCommand::Lobby), command(LobbyCommand::Join)), m_players(players)
+{
+	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+}
+
+PlayerListHandler::~PlayerListHandler()
+{
+	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+}
+
+void PlayerListHandler::HandlePacket(vyt::Packet & packet)
+{
+	CString player;
+	packet->Decode("s", &player);
+	if (packet->getSubCommand() == command(LobbyCommand::Join))
+	{
+		PlayerJoin(player);
+	}
+	else if (packet->getSubCommand() == command(LobbyCommand::Leave))
+	{
+		PlayerLeave(player);
+	}
+}
+
+
+void ChatroomDlg::OnSelectPlayer(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	if (-1 == pNMItemActivate->iItem) return;
+	*pResult = 0;
 }

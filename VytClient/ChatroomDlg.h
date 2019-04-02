@@ -3,6 +3,18 @@
 #include "Handler.h"
 // ChatroomDlg 对话框
 
+class PlayerListHandler : public vyt::IHandler
+{
+private:
+	CListCtrl &m_players;
+	void PlayerJoin(CString player);
+	void PlayerLeave(CString player);
+public:
+	PlayerListHandler(CListCtrl &players);
+	virtual ~PlayerListHandler();
+	void HandlePacket(vyt::Packet &packet);
+};
+
 class ChatroomDlg : public CDialogEx, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(ChatroomDlg)
@@ -25,9 +37,12 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CListCtrl m_players;
+	PlayerListHandler m_playerHandler;
 	CString m_message;
 	afx_msg void DoSend();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	CString m_chats;
 	CEdit m_chatscroll;
+	virtual BOOL OnInitDialog();
+	afx_msg void OnSelectPlayer(NMHDR *pNMHDR, LRESULT *pResult);
 };

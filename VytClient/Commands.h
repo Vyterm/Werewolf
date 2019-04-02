@@ -28,6 +28,7 @@ enum class LobbyCommand
 {
 	Join = 0,
 	Chat = 1,
+	Leave = 2,
 };
 
 
