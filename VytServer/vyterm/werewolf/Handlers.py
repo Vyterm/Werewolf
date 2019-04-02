@@ -58,14 +58,16 @@ class Caches(object):
         for player in self.mysql.select("select `user_number`, `user_name`, `user_pass` from `user_table`;"):
             phone, name, md5_pass = player
             self.dbPlayers[str(phone)] = md5_pass
-            self.friends[phone] = []
+            self.friends[str(phone)] = []
 
         for connection in self.mysql.select("select * from `friend_table`;"):
             uid, fuid = connection
             uphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % uid)
             fphone, = self.mysql.select("select `user_number` from `user_table` where `user_id` = %d" % fuid)
-            self.friends[uphone].append(fphone)
-            self.friends[fphone].append(uphone)
+            if fphone not in self.friends[uphone]:
+                self.friends[uphone].append(fphone)
+            if uphone not in self.friends[fphone]:
+                self.friends[fphone].append(uphone)
 
     def contains(self, phone: str):
         return phone in self.dbPlayers
@@ -101,6 +103,14 @@ class Caches(object):
             " where `user_id` = (select `user_id` from `user_table` where `user_number` = %d);" % (userphone,))
         win, lose, run, achieve = count_row
         return win, lose, run, achieve
+
+    def search_user_by_phone(self, userphone):
+        if userphone in self.dbPlayers:
+            return userphone
+
+    def search_user_by_name(self, username):
+        userphone = self.mysql.select("select `user_number` from `user_table` where `user_name` = '%s'" % username)
+        return userphone[0][0] if userphone else None
 
 
 class Handler(object):
@@ -209,8 +219,9 @@ class LobbyHandler(Handler):
             self.Lobbys[lobby_id] = []
         player = _Client2Player[client]
         if player not in self.Lobbys[lobby_id]:
+            for p in self.Lobbys[lobby_id]:
+                _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
             self.Lobbys[lobby_id].append(player)
-            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 0))
         else:
             client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, struct.pack('B', 1))
         pass
@@ -225,6 +236,8 @@ class LobbyHandler(Handler):
         if player not in self.Lobbys[lobby_id]:
             return
         self.Lobbys[lobby_id].remove(player)
+        for p in self.Lobbys[lobby_id]:
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, string_to_bytes(player))
         pass
 
     def lobby_chat(self, client, packet):
@@ -257,7 +270,7 @@ class LobbyHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        for lobby in self.Lobbys:
+        for lobby in self.Lobbys.values():
             if player in lobby:
                 lobby.remove(player)
         pass
@@ -267,7 +280,23 @@ class FriendHandler(Handler):
     def online(self, client, packet):
         pass
 
-    def add_friend(self, client, packet):
+    @staticmethod
+    def add_friend(client, packet):
+        if client not in _Client2Player:
+            return
+        sender = _Client2Player[client]
+        is_direct = struct.unpack('B', packet[:1])
+        user_tag = string_to_bytes(packet[1:])
+        if is_direct:
+            player = Caches().search_user_by_phone(user_tag)
+        else:
+            player = Caches().search_user_by_name(user_tag)
+        if player in _Player2Client:
+            _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
+                                        struct.pack('B', 0) + string_to_bytes(sender))
+            client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 0) + string_to_bytes(player))
+        else:
+            client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 1))
         pass
 
     def del_friend(self, client, packet):
@@ -341,12 +370,14 @@ if __name__ == '__main__':
     # print(type(Caches.get))
     # assert id(Caches.get()) == id(Caches())
     assert id(Caches.get()) == id(Caches.get())
-    print(Caches.get().get_user_info(18986251734))
-    assert not Caches().remove_user(str(17708807700))
-    assert Caches().append_user(str(17708807700), 'Crazy')
-    assert not Caches().append_user(str(17708807700), 'Crazy')
-    assert Caches().match(str(17708807700), 'Crazy')
-    assert Caches().remove_user(str(17708807700))
+    # print(Caches.get().get_user_info(18986251734))
+    # assert not Caches().remove_user(str(17708807700))
+    # assert Caches().append_user(str(17708807700), 'Crazy')
+    # assert not Caches().append_user(str(17708807700), 'Crazy')
+    # assert Caches().match(str(17708807700), 'Crazy')
+    # assert Caches().remove_user(str(17708807700))
+    # print(Caches().search_user_by_name('18986251734'))
+    Caches().friend_names('18986251734')
     print("All tests of werewolf.Handlers passed.")
 else:
     Caches.get()

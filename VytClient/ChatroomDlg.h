@@ -24,8 +24,10 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	CListCtrl m_chats;
+	CListCtrl m_players;
 	CString m_message;
 	afx_msg void DoSend();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	CString m_chats;
+	CEdit m_chatscroll;
 };

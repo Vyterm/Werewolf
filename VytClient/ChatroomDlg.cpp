@@ -16,6 +16,7 @@ IMPLEMENT_DYNAMIC(ChatroomDlg, CDialogEx)
 ChatroomDlg::ChatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_H_CHATROOM, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
 	, m_message(_T(""))
+	, m_chats(_T(""))
 {
 	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Join), "i", 0));
 }
@@ -31,14 +32,20 @@ void ChatroomDlg::HandlePacket(vyt::Packet & packet)
 	if (0 != lobbyId) return;
 	CString senderName, chatMessage;
 	packet->Decode("iss", &lobbyId, &senderName, &chatMessage);
-	m_chats.InsertItem(m_chats.GetItemCount(), senderName + _T(":") + chatMessage);
+	UpdateData(TRUE);
+	m_chats += senderName + _T(":") + chatMessage + _T("\r\n");
+	UpdateData(FALSE);
+	m_chatscroll.LineScroll(m_chatscroll.GetLineCount());
+	//m_chatscroll.SendMessage(WM_VSCROLL, SB_BOTTOM, 0);
 }
 
 void ChatroomDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST1, m_chats);
+	DDX_Control(pDX, IDC_LIST1, m_players);
 	DDX_Text(pDX, IDC_EDIT1, m_message);
+	DDX_Text(pDX, IDC_HCR_CHAT, m_chats);
+	DDX_Control(pDX, IDC_HCR_CHAT, m_chatscroll);
 }
 
 
