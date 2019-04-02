@@ -79,6 +79,9 @@
     <ClInclude Include="RoomlistDlg.h">
       <Filter>Game\UI\Home</Filter>
     </ClInclude>
+    <ClInclude Include="UserInfoDlg.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -119,6 +122,9 @@
     </ClCompile>
     <ClCompile Include="RoomlistDlg.cpp">
       <Filter>Game\UI\Home</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInfoDlg.cpp">
+      <Filter>Game\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

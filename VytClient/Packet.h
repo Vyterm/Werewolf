@@ -166,7 +166,7 @@ namespace vyt
 	{
 		return std::make_shared<__Packet>(OpCommand, SubCommand, std::move(srcs));
 	}
-	inline Packet _Packet(command OpCommand, command SubCommand, const char *szFormat, ...)
+	inline Packet _Packet(command OpCommand, command SubCommand, const char *szFormat = "", ...)
 	{
 		static const vytsize intSize = sizeof(int), sizesize = sizeof(vytsize);
 		BufferPair srcs;

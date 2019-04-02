@@ -25,12 +25,16 @@ class UserCommand(Enum):
     Login = 0
     Regis = 1
     Verify = 2
+    GetName = 3
+    SetName = 4
+    GetInfo = 5
 
 
 class LobbyCommand(Enum):
     Join = 0
     Chat = 1
     Leave = 2
+    Rename = 3
 
 
 class FriendCommand(Enum):
@@ -41,6 +45,7 @@ class FriendCommand(Enum):
     Chat = 4
     File = 5
     Video = 6
+    List = 7
 
 
 _Client2Player = {}
@@ -91,16 +96,16 @@ class Caches(object):
         password = md5str(password)
         return self.dbPlayers[phone] == password
 
-    def friend_names(self, userphone):
+    def friend_names(self, userphone: str):
         return self.friends[userphone]
 
-    def get_user_name(self, userphone):
+    def get_user_name(self, userphone: str):
         return self.mysql.select("select `user_name` from `user_table` where `user_number` = %s" % userphone)[0][0]
 
-    def get_user_info(self, userphone):
+    def get_user_info(self, userphone: str):
         count_row, = self.mysql.select(
             "select `win_count`, `lose_count`, `run_count`, `achievement` from `user_table`"
-            " where `user_id` = (select `user_id` from `user_table` where `user_number` = %d);" % (userphone,))
+            " where `user_id` = (select `user_id` from `user_table` where `user_number` = %s);" % (userphone,))
         win, lose, run, achieve = count_row
         return win, lose, run, achieve
 
@@ -111,6 +116,23 @@ class Caches(object):
     def search_user_by_name(self, username):
         userphone = self.mysql.select("select `user_number` from `user_table` where `user_name` = '%s'" % username)
         return userphone[0][0] if userphone else None
+
+    def update_user_name(self, oldname, newname):
+        self.mysql.execute("update `user_table` set `user_name`='%s' where `user_name`='%s'" % (newname, oldname))
+        pass
+
+    @staticmethod
+    def username_isvalid(username: str):
+        username = username.lower()
+        for badchar in [' ', '：', ':', ';', "'", '"', '`', '@', '$', '&', '%', '/', '?', '=', '<', '>', '\n', 'system']:
+            if badchar in username:
+                return False
+        return True
+
+
+def player_to_namebytes(player):
+    player = Caches().get_user_name(player)
+    return string_to_bytes(player) if player else bytes()
 
 
 class Handler(object):
@@ -196,12 +218,46 @@ class UserHandler(Handler):
             Caches().append_user(phone, self.verifyphones[phone][1])
             client.send(OpCommand.User.value, UserCommand.Verify.value, struct.pack('B', 0))
 
+    @staticmethod
+    def getname(client, packet):
+        assert len(packet) == 0
+        if client not in _Client2Player:
+            return
+        client.send(OpCommand.User.value, UserCommand.GetName.value, player_to_namebytes(_Client2Player[client]))
+        pass
+
+    def setname(self, client, packet):
+        if client not in _Client2Player:
+            return
+        oldname = Caches().get_user_name(_Client2Player[client])
+        newname = bytes_to_string(packet)
+        if newname.isdigit() and len(newname) == 11 or not Caches.username_isvalid(newname):
+            client.send(OpCommand.User.value, UserCommand.SetName.value, struct.pack('B', 1))
+        else:
+            Caches().update_user_name(oldname, newname)
+            LobbyHandler().brocast_name_changed(oldname, newname)
+            client.send(OpCommand.User.value, UserCommand.SetName.value, struct.pack('B', 0))
+            self.getname(client, bytes())
+        pass
+
+    @staticmethod
+    def getinfo(client, packet):
+        assert len(packet) == 0
+        if client not in _Client2Player:
+            return
+        client.send(OpCommand.User.value, UserCommand.GetInfo.value,
+                    struct.pack('iiii', *Caches().get_user_info(_Client2Player[client])))
+        pass
+
     @property
     def handlers(self):
         return {
             UserCommand.Login.value: self.login,
             UserCommand.Regis.value: self.regis,
-            UserCommand.Verify.value: self.verify
+            UserCommand.Verify.value: self.verify,
+            UserCommand.GetName.value: self.getname,
+            UserCommand.SetName.value: self.setname,
+            UserCommand.GetInfo.value: self.getinfo,
         }
 
     def logout(self, client):
@@ -210,7 +266,16 @@ class UserHandler(Handler):
             _Client2Player.pop(client)
 
 
+@get_instance
+@singleton
 class LobbyHandler(Handler):
+    def brocast_name_changed(self, oldname, newname):
+        for lobby in self.Lobbys.values():
+            if oldname in lobby:
+                for p in lobby:
+                    _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Rename.value,
+                                           strings_to_bytes(oldname, newname))
+
     def join(self, client, packet):
         if client not in _Client2Player:
             return
@@ -222,8 +287,8 @@ class LobbyHandler(Handler):
             return
         for p in self.Lobbys[lobby_id]:
             _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
-            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(p))
-        client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, string_to_bytes(player))
+            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(p))
+        client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(player))
         self.Lobbys[lobby_id].append(player)
         pass
 
@@ -238,7 +303,7 @@ class LobbyHandler(Handler):
             return
         self.Lobbys[lobby_id].remove(player)
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, string_to_bytes(player))
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, player_to_namebytes(player))
         pass
 
     def lobby_chat(self, client, packet):
@@ -253,7 +318,7 @@ class LobbyHandler(Handler):
         chat = bytes_to_string(packet[4:])
         for p in self.Lobbys[lobby_id]:
             _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, struct.pack('i', lobby_id) +
-                                   strings_to_bytes(player, chat))
+                                   player_to_namebytes(player) + string_to_bytes(chat))
         pass
 
     def __init__(self):
@@ -316,6 +381,9 @@ class FriendHandler(Handler):
                     + strings_to_bytes("Test", "Video"))
         pass
 
+    def friend_list(self, client, packet):
+        pass
+
     @property
     def handlers(self):
         return {
@@ -325,6 +393,7 @@ class FriendHandler(Handler):
             FriendCommand.Chat.value: self.private_chat,
             FriendCommand.File.value: self.file_trans,
             FriendCommand.Video.value: self.video_trans,
+            FriendCommand.List.value: self.friend_list,
         }
 
     def logout(self, client):

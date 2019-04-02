@@ -50,7 +50,7 @@
 #     2. 当创建多线程的时候，类的析构就没有调用，为什么？
 # """
 
-# import struct
+import struct
 #
 # if __name__ == '__main__':
 #     print("Default:")
@@ -77,7 +77,11 @@ if __name__ == '__main__':
     #     if i % 2:
     #         ia.pop(i)
     # print(ia)
-    print("%d" % 2)
+    # print("%d" % 2)
+    # packet = struct.pack('i', 3)[4:]
+    # print(len(packet))
+    # print(struct.pack('i', 3) + bytes())
+    print('select' in 'set sdla select asd')
 
 
 

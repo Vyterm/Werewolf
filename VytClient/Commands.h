@@ -21,6 +21,9 @@ enum class UserCommand
 	Login = 0,
 	Regis = 1,
 	Verify = 2,
+	GetName = 3,
+	SetName = 4,
+	GetInfo = 5,
 };
 
 
@@ -41,6 +44,7 @@ enum class FriendCommand
 	Chat = 4,
 	File = 5,
 	Video = 6,
+	List = 7,
 };
 
 #endif
