@@ -344,8 +344,9 @@ class FriendHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        # 获取客户端的请求标识信息(为了避免将好友名发来发去)
+        # 获取客户端的请求标识信息(初始设计为对私聊文件及视频分配不同的权限，目前都是全权限，因此此参数作废)
         tag, = struct.unpack('i', packet[:4])
+        assert tag == 0
         # 解包获取要发送的好友名
         name = bytes_to_string(packet[4:])
         # 在缓存中搜索要发送的好友号码
@@ -363,9 +364,11 @@ class FriendHandler(Handler):
         else:
             # 在自身的缓存中建立连接
             self.create_connection(player, target)
-            # 给双方客户端发送建立聊天配置成功的消息(此处有bug，客户端的请求标识信息只作用于其自身)
-            client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
-            _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
+            # 给双方客户端发送建立聊天配置成功的消息
+            client.send(OpCommand.Friend.value, FriendCommand.Access.value,
+                        struct.pack('B', 0) + string_to_bytes(name))
+            _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Access.value,
+                                        struct.pack('B', 0) + player_to_namebytes(player))
         pass
 
     @property

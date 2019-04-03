@@ -37,9 +37,9 @@ void FriendDlg::HandleAccess(vyt::Packet & packet)
 	byte access = packet->getMessage()[0];
 	if (access == 0)
 	{
-		int id;
-		packet->Decode("bi", nullptr, &id);
-		FriendChatDlg::Create(m_username, m_friends.GetItemText(id, 0), this);
+		CString friendname;
+		packet->Decode("bs", nullptr, &friendname);
+		FriendChatDlg::Create(m_username, friendname, this);
 	}
 	else if (access == 1)
 		MessageBox(_T("好友名称错误!"));
@@ -136,7 +136,7 @@ void FriendDlg::InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult)
 
 void FriendDlg::OnChatToFriend()
 {
-	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", m_friendID, m_friends.GetItemText(m_friendID, 0)));
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", 0, m_friends.GetItemText(m_friendID, 0)));
 }
 
 
