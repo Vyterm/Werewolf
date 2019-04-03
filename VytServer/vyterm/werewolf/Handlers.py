@@ -40,7 +40,7 @@ class UserHandler(Handler):
             # 发送登录成功的消息
             client.send(OpCommand.User.value, UserCommand.Login.value, struct.pack('B', 0))
             # 给已在线上的好友发送上线的消息
-            for friendName in Caches.get().friend_names(username):
+            for friendName in Caches.get().get_friend_phones(username):
                 if friendName in _Player2Client:
                     _Player2Client[friendName].send(OpCommand.Friend.value, FriendCommand.Online.value, bytes(1))
 
@@ -236,23 +236,32 @@ class FriendHandler(Handler):
 
     @staticmethod
     def add_friend(client, packet):
+        # 判断发起请求的玩家是否在线
         if client not in _Client2Player:
             return
         sender = _Client2Player[client]
+        # 解包获取要删除的好友标识
         user_tag = bytes_to_string(packet)
+        # 搜索缓存中的好友信息
         is_direct = user_tag.isdigit() and len(user_tag) == 11
         if is_direct:
             player = Caches().search_user_by_phone(user_tag)
         else:
             player = Caches().search_user_by_name(user_tag)
+        # 如果要添加为好友的玩家不在线，添加失败
         if player not in _Player2Client:
             client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 1))
+        # 不能添加自身为好友
         elif sender == player:
             client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 2))
+        # 不能重复添加对方为好友
         elif Caches().is_friend(sender, player):
             client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 3))
+        # 成功添加好友
         else:
+            # 在缓存中建立好友连接
             Caches().create_connection(sender, player)
+            # 给双方发送添加好友成功的消息
             _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
                                         struct.pack('B', 0) + player_to_namebytes(sender))
             client.send(OpCommand.Friend.value, FriendCommand.Add.value,
@@ -260,34 +269,52 @@ class FriendHandler(Handler):
         pass
 
     def del_friend(self, client, packet):
+        # 判断发起请求的玩家是否在线
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
+        # 解包获取要删除的好友名
         name = bytes_to_string(packet)
+        # 如果已经建立连接则从连接中获取要删除的好友号码并断开连接
         if player in self.access_connections and name in self.access_connections[player]:
+            # 获取要删除的好友号码
             target = self.access_connections[player][name]
+            # 向客户端发送断开连接的消息
+            _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Offline.value,
+                                        player_to_namebytes(player))
+            client.send(OpCommand.Friend.value, FriendCommand.Offline.value, name)
+            # 删除好友间的连接
             self.access_connections[player].pop(name)
             self.access_connections[target].pop(Caches().get_user_name(player))
+        # 否则从缓存中读取要删除的好友号码
         else:
             target = Caches().search_user_by_name(name)
             if target is None:
                 return
+        # 判断自身与其是否为好友
         if Caches().is_friend(player, target):
+            # 删除数据库及缓存中的好友关系
             Caches().delete_connection(player, target)
+            # 向客户端发送删除好友成功的消息
             client.send(OpCommand.Friend.value, FriendCommand.Del.value, player_to_namebytes(target))
+            # 如果好友在线，则向好友客户端也发送删除好友的消息
             if target in _Player2Client:
                 _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Del.value,
                                             player_to_namebytes(player))
         pass
 
     def private_chat(self, client, packet):
+        # 判断发起请求的玩家是否在线
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
+        # 解包获取要发给的好友名及私聊消息
         name, chat = bytes_to_strings(packet)
+        # 判断是否有发送的权限
         target = self.get_connection(player, name)
         if target is None:
             return
+        # 给目标好友发送消息，客户端会自身完成私聊信息的刷新，因此无需给发送者发私聊消息
         _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Chat.value,
                                     player_to_namebytes(player) + string_to_bytes(chat))
 
@@ -304,7 +331,7 @@ class FriendHandler(Handler):
     @staticmethod
     def friend_list(client, packet):
         assert len(packet) == 0
-        friends = Caches().friend_names(_Client2Player[client])
+        friends = Caches().get_friend_phones(_Client2Player[client])
         count = struct.pack('i', len(friends))
         friends = [player_to_namebytes(friend) for friend in friends]
         friends = reduce(lambda l, r: l + r, [bytes()] + friends)
@@ -313,20 +340,30 @@ class FriendHandler(Handler):
         pass
 
     def access_chat(self, client, packet):
+        # 判断发起请求的玩家是否在线
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
+        # 获取客户端的请求标识信息(为了避免将好友名发来发去)
         tag, = struct.unpack('i', packet[:4])
+        # 解包获取要发送的好友名
         name = bytes_to_string(packet[4:])
+        # 在缓存中搜索要发送的好友号码
         target = Caches().search_user_by_name(name)
+        # 如果没有找到，则请求发送权限失败
         if not target:
             client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 1))
+        # 如果与目标玩家不是好友，则请求发送权限失败
         elif not Caches().is_friend(player, target):
             client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 2))
+        # 如果好友未在线，则请求发送权限失败
         elif target not in _Player2Client:
             client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('B', 3))
+        # 成功建立发送权限
         else:
+            # 在自身的缓存中建立连接
             self.create_connection(player, target)
+            # 给双方客户端发送建立聊天配置成功的消息(此处有bug，客户端的请求标识信息只作用于其自身)
             client.send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
             _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Access.value, struct.pack('Bi', 0, tag))
         pass
@@ -349,7 +386,7 @@ class FriendHandler(Handler):
             return
         player = _Client2Player[client]
         self.delete_connection(player)
-        for friend in Caches().friend_names(player):
+        for friend in Caches().get_friend_phones(player):
             if friend in _Player2Client:
                 _Player2Client[friend].send(OpCommand.Friend.value, FriendCommand.Offline.value,
                                             player_to_namebytes(player))
@@ -403,7 +440,7 @@ if __name__ == '__main__':
     # assert Caches().match(str(17708807700), 'Crazy')
     # assert Caches().remove_user(str(17708807700))
     # print(Caches().search_user_by_name('18986251734'))
-    Caches().friend_names('18986251734')
+    Caches().get_friend_phones('18986251734')
     print("All tests of werewolf.Handlers passed.")
 else:
     Caches.get()

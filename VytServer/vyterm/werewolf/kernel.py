@@ -97,7 +97,7 @@ class Caches(object):
     def is_friend(self, userphone: str, friendphone: str):
         return friendphone in self.friends[userphone]
 
-    def friend_names(self, userphone: str):
+    def get_friend_phones(self, userphone: str):
         return self.friends[userphone]
 
     def create_connection(self, userphone: str, friendphone: str):
