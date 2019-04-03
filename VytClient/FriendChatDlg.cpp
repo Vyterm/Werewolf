@@ -35,6 +35,13 @@ void FriendChatDlg::Delete(FriendChatDlg * pDlg)
 	pDlg->SetTimer(0x1234, 1000, nullptr);
 }
 
+void FriendChatDlg::Rename(FriendChatDlg *pDlg, CString &newname)
+{
+	pFriends.erase(pFriends.find(pDlg->m_friendname));
+	pDlg->m_friendname = newname;
+	pFriends[pDlg->m_friendname] = pDlg;
+}
+
 IMPLEMENT_DYNAMIC(FriendChatDlg, CDialogEx)
 
 FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent /*=nullptr*/)
@@ -102,7 +109,7 @@ void FriendChatDlg::HandlePacket(vyt::Packet & packet)
 			if (oldname == m_selfname)
 				m_selfname = newname;
 			else if (oldname == m_friendname)
-				m_friendname = newname;
+				Rename(this, newname);
 			UpdateTitle();
 		}
 	}

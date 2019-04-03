@@ -11,6 +11,7 @@ public:
 	static void Create(CString selfname, CString friendname, CWnd* pParent = nullptr);
 private:
 	static void Delete(FriendChatDlg *pDlg);
+	static void Rename(FriendChatDlg *pDlg, CString &newname);
 private:
 	FriendChatDlg(CString selfname, CString friendname, CWnd* pParent = nullptr);   // 标准构造函数
 	virtual ~FriendChatDlg();
