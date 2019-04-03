@@ -73,9 +73,14 @@ void FriendDlg::HandlePacket(vyt::Packet & packet)
 		}
 		else if (packet->getSubCommand() == command(FriendCommand::Add))
 		{
-			if (1 == packet->getMessage()[0])
+			byte access = packet->getMessage()[0];
+			if (1 == access)
 				MessageBox(_T("添加好友失败，可能是因为用户名错误或对方不在线"));
-			else if (0 == packet->getMessage()[0])
+			else if (2 == access)
+				MessageBox(_T("不能添加自身为好友"));
+			else if (3 == access)
+				MessageBox(_T("与对方已经是好友关系，不能重复添加"));
+			else if (0 == access)
 			{
 				CString friendName;
 				packet->Decode("bs", nullptr, &friendName);
