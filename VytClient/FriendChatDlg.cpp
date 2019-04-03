@@ -46,6 +46,9 @@ FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent
 	, m_inputchat(_T(""))
 {
 	CDialogEx::Create(IDD_HF_FRIENDCHAT, pParent);
+	CString title;
+	title.Format(_T("%s 与 %s 的对话"), m_selfname, m_friendname);
+	CDialogEx::SetWindowText(title);
 	NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
 }
 
