@@ -1,9 +1,10 @@
 ﻿#pragma once
 
-
+#include "SmartListCtrl.h"
+#include "Handler.h"
 // RoomlistDlg 对话框
 
-class RoomlistDlg : public CDialogEx
+class RoomlistDlg : public CDialogEx, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(RoomlistDlg)
 
@@ -16,10 +17,18 @@ public:
 	enum { IDD = IDD_H_ROOMLIST };
 #endif
 
+private:
+	void Refresh();
+public:
+	void HandlePacket(vyt::Packet &packet) override;
+
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
 	DECLARE_MESSAGE_MAP()
 public:
-	CListCtrl m_roomlist;
+	SmartListCtrl m_roomlist;
+	afx_msg void OnBnClickedHrRefresh();
+	afx_msg void OnBnClickedHrNewroom();
+	virtual BOOL OnInitDialog();
 };

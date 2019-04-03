@@ -133,16 +133,49 @@ class UserHandler(Handler):
             _Client2Player.pop(client)
 
 
+class RoomInfo(object):
+    def __init__(self, idname: str, password: str = str(), description: str = str(), mode: int = 0):
+        self.idname = idname
+        self.password = password
+        self.description = description
+        self.mode = mode
+        # 目前默认模式房间最大人数都为15，如果之后要加入自定义模式则不能再采用默认模式的默认最大人数
+        assert self.mode == 0
+        self.maxplayer = 15
+
+    @property
+    def has_password(self) -> bool:
+        return self.password == str()
+
+
 class LobbyHandler(Handler):
     def refresh(self, client, packet):
+        assert len(packet) == 0
+        count = 0
+        for info in self.LobbyInfos:
+            if len(self.Lobbys[info.idname]) != 0:
+                count += 1
+                lobbyname = string_to_bytes(info.idname)
+                haspassword = struct.pack('B', info.has_password)
+                creator = player_to_namebytes(self.Lobbys[info.idname][0])
+                description = string_to_bytes(info.description)
+                playercount = struct.pack('iii', len(self.Lobbys[info.idname]), info.maxplayer, info.mode)
+                packet += lobbyname + haspassword + creator + description + playercount
+        packet = struct.pack('i', count) + packet
+        client.send(OpCommand.Lobby.value, LobbyCommand.Refresh.value, packet)
         pass
 
     def create(self, client, packet):
         if client not in _Client2Player:
             return
+        player = _Client2Player[client]
         lobby_id = bytes_to_string(packet)
         if lobby_id in self.Lobbys:
             client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 1))
+        else:
+            self.Lobbys[lobby_id] = [player]
+            self.LobbyInfos[lobby_id] = RoomInfo(lobby_id)
+            client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 0))
 
     def join(self, client, packet):
         if client not in _Client2Player:

@@ -86,6 +86,9 @@
       <Filter>Game\UI\Custom</Filter>
     </ClInclude>
     <ClInclude Include="FriendChatDlg.h" />
+    <ClInclude Include="SmartListCtrl.h">
+      <Filter>Game\UI\Custom</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -131,6 +134,9 @@
       <Filter>Game\UI\Custom</Filter>
     </ClCompile>
     <ClCompile Include="FriendChatDlg.cpp" />
+    <ClCompile Include="SmartListCtrl.cpp">
+      <Filter>Game\UI\Custom</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VytClient.rc">
