@@ -31,6 +31,7 @@ public:
 
 private:
 	int m_friendID;
+	CString m_roomID;
 public:
 	void HandlePacket(vyt::Packet &packet);
 

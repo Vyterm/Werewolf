@@ -31,9 +31,10 @@ enum class UserCommand
 enum class LobbyCommand
 {
 	Refresh = 0,
-	Join = 1,
-	Leave = 2,
-	Chat = 3,
+	Create = 1,
+	Join = 2,
+	Leave = 3,
+	Chat = 4,
 };
 
 

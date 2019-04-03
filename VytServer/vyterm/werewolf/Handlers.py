@@ -134,12 +134,22 @@ class UserHandler(Handler):
 
 
 class LobbyHandler(Handler):
+    def refresh(self, client, packet):
+        pass
+
+    def create(self, client, packet):
+        if client not in _Client2Player:
+            return
+        lobby_id = bytes_to_string(packet)
+        if lobby_id in self.Lobbys:
+            client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 1))
+
     def join(self, client, packet):
         if client not in _Client2Player:
             return
-        lobby_id, = struct.unpack('i', packet)
+        lobby_id = bytes_to_string(packet)
         if lobby_id not in self.Lobbys:
-            self.Lobbys[lobby_id] = []
+            return
         player = _Client2Player[client]
         if player in self.Lobbys[lobby_id]:
             return
@@ -153,7 +163,7 @@ class LobbyHandler(Handler):
     def leave(self, client, packet):
         if client not in _Client2Player:
             return
-        lobby_id, = struct.unpack('i', packet)
+        lobby_id = bytes_to_string(packet)
         if lobby_id not in self.Lobbys:
             return
         player = _Client2Player[client]
@@ -168,23 +178,24 @@ class LobbyHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        lobby_id, = struct.unpack('i', packet[:4])
+        lobby_id, chat = bytes_to_strings(packet)
         if lobby_id not in self.Lobbys:
             return
         if player not in self.Lobbys[lobby_id]:
             return
-        chat = bytes_to_string(packet[4:])
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, struct.pack('i', lobby_id) +
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Chat.value, string_to_bytes(lobby_id) +
                                    player_to_namebytes(player) + string_to_bytes(chat))
         pass
 
     def __init__(self):
-        self.Lobbys = {}
+        self.Lobbys = {"": []}
 
     @property
     def handlers(self):
         return {
+            LobbyCommand.Refresh.value: self.refresh,
+            LobbyCommand.Create.value: self.create,
             LobbyCommand.Join.value: self.join,
             LobbyCommand.Leave.value: self.leave,
             LobbyCommand.Chat.value: self.lobby_chat,
@@ -196,7 +207,7 @@ class LobbyHandler(Handler):
         player = _Client2Player[client]
         for lid, lobby in self.Lobbys.items():
             if player in lobby:
-                self.leave(client, struct.pack('i', lid))
+                self.leave(client, string_to_bytes(lid))
         pass
 
 

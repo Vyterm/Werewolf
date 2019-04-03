@@ -16,10 +16,11 @@ IMPLEMENT_DYNAMIC(ChatroomDlg, CDialogEx)
 ChatroomDlg::ChatroomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_H_CHATROOM, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
 	, m_playerHandler(m_players)
+	, m_roomID(_T(""))
 	, m_message(_T(""))
 	, m_chats(_T(""))
 {
-	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Join), "i", 0));
+	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Join), "s", m_roomID));
 }
 
 ChatroomDlg::~ChatroomDlg()
@@ -28,11 +29,11 @@ ChatroomDlg::~ChatroomDlg()
 
 void ChatroomDlg::HandlePacket(vyt::Packet & packet)
 {
-	int lobbyId;
-	packet->Decode("i", &lobbyId);
-	if (0 != lobbyId) return;
+	CString lobbyId;
+	packet->Decode("s", &lobbyId);
+	if (m_roomID != lobbyId) return;
 	CString senderName, chatMessage;
-	packet->Decode("iss", &lobbyId, &senderName, &chatMessage);
+	packet->Decode("sss", nullptr, &senderName, &chatMessage);
 	UpdateData(TRUE);
 	m_chats += senderName + _T(":") + chatMessage + _T("\r\n");
 	UpdateData(FALSE);
@@ -65,7 +66,7 @@ void ChatroomDlg::DoSend()
 	UpdateData(TRUE);
 	if (_T("") != m_message)
 	{
-		vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Chat), "is", 0, m_message));
+		vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Chat), "ss", m_roomID, m_message));
 		m_message = _T("");
 		UpdateData(FALSE);
 	}
