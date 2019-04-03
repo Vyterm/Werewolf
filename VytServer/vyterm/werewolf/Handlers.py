@@ -100,7 +100,9 @@ class UserHandler(Handler):
             client.send(OpCommand.User.value, UserCommand.SetName.value, struct.pack('B', 1))
         else:
             Caches().update_user_name(oldname, newname)
-            LobbyHandler().brocast_name_changed(_Client2Player[client], oldname, newname)
+            namepack = strings_to_bytes(oldname, newname)
+            for c in _Client2Player:
+                c.send(OpCommand.User.value, UserCommand.Rename.value, namepack)
             client.send(OpCommand.User.value, UserCommand.SetName.value, struct.pack('B', 0))
             self.getname(client, bytes())
         pass
@@ -131,16 +133,7 @@ class UserHandler(Handler):
             _Client2Player.pop(client)
 
 
-@get_instance
-@singleton
 class LobbyHandler(Handler):
-    def brocast_name_changed(self, player, oldname, newname):
-        for lobby in self.Lobbys.values():
-            if player in lobby:
-                for p in lobby:
-                    _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Rename.value,
-                                           strings_to_bytes(oldname, newname))
-
     def join(self, client, packet):
         if client not in _Client2Player:
             return

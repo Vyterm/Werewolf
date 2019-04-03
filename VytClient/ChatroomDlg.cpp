@@ -120,32 +120,41 @@ PlayerListHandler::PlayerListHandler(CListCtrl & players)
 	: IHandler(command(OpCommand::Lobby), command(LobbyCommand::Join)), m_players(players)
 {
 	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
-	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Rename), *this);
+	NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 }
 
 PlayerListHandler::~PlayerListHandler()
 {
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
-	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Rename), *this);
+	NetHandler::Get().UnregisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 }
 
 void PlayerListHandler::HandlePacket(vyt::Packet & packet)
 {
-	CString player;
-	packet->Decode("s", &player);
-	if (packet->getSubCommand() == command(LobbyCommand::Join))
+	if (packet->getOpCommand() == command(OpCommand::Lobby))
 	{
-		PlayerJoin(player);
+		if (packet->getSubCommand() == command(LobbyCommand::Join))
+		{
+			CString player;
+			packet->Decode("s", &player);
+			PlayerJoin(player);
+		}
+		else if (packet->getSubCommand() == command(LobbyCommand::Leave))
+		{
+			CString player;
+			packet->Decode("s", &player);
+			PlayerLeave(player);
+		}
 	}
-	else if (packet->getSubCommand() == command(LobbyCommand::Leave))
+	else if (packet->getOpCommand() == command(OpCommand::User))
 	{
-		PlayerLeave(player);
-	}
-	else if (packet->getSubCommand() == command(LobbyCommand::Rename))
-	{
-		CString newname;
-		packet->Decode("ss", nullptr, &newname);
-		PlayerRename(player, newname);
+		if (packet->getSubCommand() == command(UserCommand::Rename))
+		{
+			CString player;
+			CString newname;
+			packet->Decode("ss", &player, &newname);
+			PlayerRename(player, newname);
+		}
 	}
 }
 

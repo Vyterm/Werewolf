@@ -24,15 +24,16 @@ enum class UserCommand
 	GetName = 3,
 	SetName = 4,
 	GetInfo = 5,
+	Rename = 6,
 };
 
 
 enum class LobbyCommand
 {
-	Join = 0,
-	Chat = 1,
+	Refresh = 0,
+	Join = 1,
 	Leave = 2,
-	Rename = 3,
+	Chat = 3,
 };
 
 

@@ -23,13 +23,14 @@ class UserCommand(Enum):
     GetName = 3
     SetName = 4
     GetInfo = 5
+    Rename = 6
 
 
 class LobbyCommand(Enum):
-    Join = 0
-    Chat = 1
+    Refresh = 0
+    Join = 1
     Leave = 2
-    Rename = 3
+    Chat = 3
 
 
 class FriendCommand(Enum):
