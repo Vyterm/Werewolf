@@ -190,6 +190,7 @@ class LobbyHandler(Handler):
 
     def __init__(self):
         self.Lobbys = {"": []}
+        self.LobbyInfos = {}
 
     @property
     def handlers(self):
@@ -437,17 +438,6 @@ if __name__ == '__main__':
     # assert handlers[0].execute(None, 0, strings_to_bytes("Vyterm", "123456"))
     assert not handle_packet(None, -1, 0, 0)
     assert not handle_packet(None, 0, -1, 0)
-    # print(type(Caches.get))
-    # assert id(Caches.get()) == id(Caches())
-    assert id(Caches.get()) == id(Caches.get())
-    # print(Caches.get().get_user_info(18986251734))
-    # assert not Caches().remove_user(str(17708807700))
-    # assert Caches().append_user(str(17708807700), 'Crazy')
-    # assert not Caches().append_user(str(17708807700), 'Crazy')
-    # assert Caches().match(str(17708807700), 'Crazy')
-    # assert Caches().remove_user(str(17708807700))
-    # print(Caches().search_user_by_name('18986251734'))
-    Caches().get_friend_phones('18986251734')
     print("All tests of werewolf.Handlers passed.")
 else:
     Caches.get()

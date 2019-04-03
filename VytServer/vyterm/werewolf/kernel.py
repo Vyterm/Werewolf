@@ -172,6 +172,17 @@ class Handler(object):
 
 
 if __name__ == '__main__':
+    assert id(Caches()) == id(Caches())
+    assert id(Caches.get()) == id(Caches.get())
+    # Caches().remove_user(str(18986251734))
+    # assert Caches().append_user(str(18986251734), 'Vyterm')
+    # print(Caches.get().get_user_info(str(18986251734)))
+    # assert not Caches().append_user(str(18986251734), 'Vyterm')
+    # assert not Caches().match(str(18986251734), 'Crazy')
+    # assert Caches().match(str(18986251734), 'Vyterm')
+    # assert Caches().remove_user(str(18986251734))
+    # print(Caches().search_user_by_name('18986251734'))
+    Caches().get_friend_phones('18986251734')
     Caches().create_connection('18986251734', '0')
     assert Caches().is_friend('18986251734', '0')
     assert Caches().is_friend('0', '18986251734')
