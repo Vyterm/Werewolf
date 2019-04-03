@@ -46,15 +46,22 @@ FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent
 	, m_inputchat(_T(""))
 {
 	CDialogEx::Create(IDD_HF_FRIENDCHAT, pParent);
-	CString title;
-	title.Format(_T("%s 与 %s 的对话"), m_selfname, m_friendname);
-	CDialogEx::SetWindowText(title);
+	UpdateTitle();
+	NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 	NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
 }
 
 FriendChatDlg::~FriendChatDlg()
 {
+	NetHandler::Get().UnregisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
+}
+
+void FriendChatDlg::UpdateTitle()
+{
+	CString title;
+	title.Format(_T("%s 与 %s 的对话"), m_selfname, m_friendname);
+	CDialogEx::SetWindowText(title);
 }
 
 void FriendChatDlg::ShowChat(CString & sender, CString & chat)
@@ -66,22 +73,38 @@ void FriendChatDlg::ShowChat(CString & sender, CString & chat)
 
 void FriendChatDlg::HandlePacket(vyt::Packet & packet)
 {
-	if (packet->getSubCommand() == command(FriendCommand::Chat))
+	if (packet->getOpCommand() == command(OpCommand::Friend))
 	{
-		CString sender, chat;
-		packet->Decode("s", &sender);
-		if (sender == m_friendname)
+		if (packet->getSubCommand() == command(FriendCommand::Chat))
 		{
-			packet->Decode("ss", nullptr, &chat);
-			ShowChat(sender, chat);
+			CString sender, chat;
+			packet->Decode("s", &sender);
+			if (sender == m_friendname)
+			{
+				packet->Decode("ss", nullptr, &chat);
+				ShowChat(sender, chat);
+			}
+		}
+		else if (packet->getSubCommand() == command(FriendCommand::Offline))
+		{
+			CString player;
+			packet->Decode("s", &player);
+			if (player == m_friendname)
+				Delete(this);
 		}
 	}
-	else if (packet->getSubCommand() == command(FriendCommand::Offline))
+	else if (packet->getOpCommand() == command(OpCommand::User))
 	{
-		CString player;
-		packet->Decode("s", &player);
-		if (player == m_friendname)
-			Delete(this);
+		if (packet->getSubCommand() == command(UserCommand::Rename))
+		{
+			CString oldname, newname;
+			packet->Decode("ss", &oldname, &newname);
+			if (oldname == m_selfname)
+				m_selfname = newname;
+			else if (oldname == m_friendname)
+				m_friendname = newname;
+			UpdateTitle();
+		}
 	}
 }
 

@@ -18,6 +18,7 @@ IMPLEMENT_DYNAMIC(FriendDlg, BaseDialog)
 FriendDlg::FriendDlg(CWnd* pParent /*=nullptr*/)
 	: BaseDialog(IDD_H_FRIEND, pParent), IHandler(command(OpCommand::User), command(UserCommand::GetName))
 {
+	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Del), *this);
@@ -28,9 +29,10 @@ FriendDlg::FriendDlg(CWnd* pParent /*=nullptr*/)
 
 FriendDlg::~FriendDlg()
 {
-	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
-	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
-	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Del), *this);
+	vyt::NetHandler::Get().UnregisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
+	vyt::NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
+	vyt::NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
+	vyt::NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Del), *this);
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Access), *this);
 }
 
@@ -46,6 +48,18 @@ void FriendDlg::ShowFriends(vyt::Packet & packet)
 	for (int i = 0; i < count; ++i)
 		m_friends.InsertItem(i, buffers[i]);
 	delete[] buffers;
+}
+
+void FriendDlg::FriendRename(vyt::Packet & packet)
+{
+	CString oldname, newname;
+	packet->Decode("ss", &oldname, &newname);
+	for (int i = 0; i < m_friends.GetItemCount(); ++i)
+		if (m_friends.GetItemText(i, 0) == oldname)
+		{
+			m_friends.SetItemText(i, 0, newname);
+			break;
+		}
 }
 
 void FriendDlg::ChatAccess(vyt::Packet & packet)
@@ -98,10 +112,15 @@ void FriendDlg::DelFriend(vyt::Packet & packet)
 
 void FriendDlg::HandlePacket(vyt::Packet & packet)
 {
-	if (packet->getOpCommand() == command(OpCommand::User) && packet->getSubCommand() == command(UserCommand::GetName))
+	if (packet->getOpCommand() == command(OpCommand::User))
 	{
-		packet->Decode("s", &m_username);
-		this->SetDlgItemText(IDC_HF_USERNAME, m_username);
+		if (packet->getSubCommand() == command(UserCommand::GetName))
+		{
+			packet->Decode("s", &m_username);
+			this->SetDlgItemText(IDC_HF_USERNAME, m_username);
+		}
+		else if (packet->getSubCommand() == command(UserCommand::Rename))
+			FriendRename(packet);
 	}
 	if (packet->getOpCommand() == command(OpCommand::Friend))
 	{

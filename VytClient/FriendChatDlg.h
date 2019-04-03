@@ -23,6 +23,7 @@ private:
 private:
 	CString m_selfname;
 	CString m_friendname;
+	void UpdateTitle();
 	void ShowChat(CString &sender, CString &chat);
 public:
 	void HandlePacket(vyt::Packet &packet) override;

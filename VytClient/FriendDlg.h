@@ -21,6 +21,7 @@ private:
 	CString m_username;
 	int m_friendID;
 	void ShowFriends(vyt::Packet &packet);
+	void FriendRename(vyt::Packet &packet);
 	void ChatAccess(vyt::Packet &packet);
 	void AddFriend(vyt::Packet &packet);
 	void DelFriend(vyt::Packet &packet);
