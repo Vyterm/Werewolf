@@ -20,6 +20,7 @@ FriendDlg::FriendDlg(CWnd* pParent /*=nullptr*/)
 {
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
+	NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Access), *this);
 	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::User), command(UserCommand::GetName)));
 	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::List)));
 }
@@ -28,6 +29,24 @@ FriendDlg::~FriendDlg()
 {
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::List), *this);
 	vyt::NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Add), *this);
+	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Access), *this);
+}
+
+void FriendDlg::HandleAccess(vyt::Packet & packet)
+{
+	byte access = packet->getMessage()[0];
+	if (access == 0)
+	{
+		int id;
+		packet->Decode("bi", nullptr, &id);
+		FriendChatDlg::Create(m_username, m_friends.GetItemText(id, 0), this);
+	}
+	else if (access == 1)
+		MessageBox(_T("好友名称错误!"));
+	else if (access == 2)
+		MessageBox(_T("与该玩家不是好友关系!"));
+	else if (access == 3)
+		MessageBox(_T("该玩家未在线!"));
 }
 
 void FriendDlg::HandlePacket(vyt::Packet & packet)
@@ -64,6 +83,10 @@ void FriendDlg::HandlePacket(vyt::Packet & packet)
 				friendName.Format(_T("已添加%s为好友！"), friendName);
 				MessageBox(friendName);
 			}
+		}
+		else if (packet->getSubCommand() == command(FriendCommand::Access))
+		{
+			HandleAccess(packet);
 		}
 	}
 }
@@ -113,7 +136,7 @@ void FriendDlg::InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult)
 
 void FriendDlg::OnChatToFriend()
 {
-	FriendChatDlg::Create(m_username, m_friends.GetItemText(m_friendID, 0), this);
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", m_friendID, m_friends.GetItemText(m_friendID, 0)));
 }
 
 

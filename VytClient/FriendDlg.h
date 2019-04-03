@@ -20,6 +20,7 @@ public:
 private:
 	CString m_username;
 	int m_friendID;
+	void HandleAccess(vyt::Packet &packet);
 public:
 	void HandlePacket(vyt::Packet &packet) override;
 

@@ -17,13 +17,21 @@ static std::map<CString, FriendChatDlg*> pFriends;
 
 void FriendChatDlg::Create(CString selfname, CString friendname, CWnd* pParent)
 {
-	if (pFriends.find(friendname) != pFriends.end()) return;
-	pFriends.emplace(friendname, new FriendChatDlg(selfname, friendname));
+	FriendChatDlg *fcd = nullptr;
+	if (pFriends.find(friendname) == pFriends.end())
+	{
+		fcd = new FriendChatDlg(selfname, friendname);
+		pFriends.emplace(friendname, fcd);
+	}
+	else
+		fcd = pFriends.find(friendname)->second;
+	fcd->ShowWindow(SW_SHOW);
 }
 
 void FriendChatDlg::Delete(FriendChatDlg * pDlg)
 {
 	pFriends.erase(pFriends.find(pDlg->m_friendname));
+	pDlg->ShowWindow(SW_HIDE);
 	pDlg->SetTimer(0x1234, 1000, nullptr);
 }
 
@@ -31,7 +39,7 @@ IMPLEMENT_DYNAMIC(FriendChatDlg, CDialogEx)
 
 FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HF_FRIENDCHAT, pParent)
-	, IHandler(command(OpCommand::Friend), command(FriendCommand::Access))
+	, IHandler(command(OpCommand::Friend), command(FriendCommand::Chat))
 	, m_selfname(selfname)
 	, m_friendname(friendname)
 	, m_chatview(_T(""))
@@ -39,37 +47,11 @@ FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent
 {
 	CDialogEx::Create(IDD_HF_FRIENDCHAT, pParent);
 	NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
-	NetHandler::Get().RegisterHandler(command(OpCommand::Friend), command(FriendCommand::Chat), *this);
-	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", int(FriendCommand::Chat), m_friendname));
 }
 
 FriendChatDlg::~FriendChatDlg()
 {
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
-	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Chat), *this);
-}
-
-void FriendChatDlg::HandleAccess(vyt::byte access)
-{
-	if (access == 0)
-	{
-		this->ShowWindow(SW_SHOW);
-		return;
-	}
-	
-	if (access == 1)
-	{
-		MessageBox(_T("好友名称错误!"));
-	}
-	else if (access == 2)
-	{
-		MessageBox(_T("与该玩家不是好友关系!"));
-	}
-	else if (access == 3)
-	{
-		MessageBox(_T("该玩家未在线!"));
-	}
-	Delete(this);
 }
 
 void FriendChatDlg::ShowChat(CString & sender, CString & chat)
@@ -81,11 +63,7 @@ void FriendChatDlg::ShowChat(CString & sender, CString & chat)
 
 void FriendChatDlg::HandlePacket(vyt::Packet & packet)
 {
-	if (packet->getSubCommand() == command(FriendCommand::Access))
-	{
-		HandleAccess(packet->getMessage()[0]);
-	}
-	else if (packet->getSubCommand() == command(FriendCommand::Chat))
+	if (packet->getSubCommand() == command(FriendCommand::Chat))
 	{
 		CString sender, chat;
 		packet->Decode("s", &sender);
