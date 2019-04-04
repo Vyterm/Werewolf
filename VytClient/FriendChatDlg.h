@@ -27,6 +27,7 @@ private:
 #endif
 
 private:
+	CFile *m_chatrecord;
 	CString m_selfname;
 	CString m_friendname;
 	void UpdateTitle();
@@ -51,4 +52,5 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnDropFiles(HDROP hDropInfo);
+	virtual BOOL OnInitDialog();
 };

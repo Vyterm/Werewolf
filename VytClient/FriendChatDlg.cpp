@@ -83,6 +83,10 @@ FriendChatDlg::FriendChatDlg(CString selfname, CString friendname, CWnd* pParent
 	, m_chatview(_T(""))
 	, m_inputchat(_T(""))
 {
+	CString recordpath;
+	recordpath.Format(_T(".\\ChatRecords\\%s_%s.vcr"), m_selfname, m_friendname);
+	m_chatrecord = new CFile(recordpath, CFile::modeReadWrite | CFile::modeCreate | CFile::modeNoTruncate | CFile::typeBinary | CFile::osSequentialScan);
+
 	CDialogEx::Create(IDD_HF_FRIENDCHAT, pParent);
 	UpdateTitle();
 	NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
@@ -97,6 +101,9 @@ FriendChatDlg::~FriendChatDlg()
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Offline), *this);
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::File), *this);
 	NetHandler::Get().UnregisterHandler(command(OpCommand::Friend), command(FriendCommand::Video), *this);
+
+	m_chatrecord->Close();
+	delete m_chatrecord;
 }
 
 void FriendChatDlg::UpdateTitle()
@@ -109,7 +116,10 @@ void FriendChatDlg::UpdateTitle()
 void FriendChatDlg::ShowChat(CString &sender, CString & chat)
 {
 	UpdateData(TRUE);
-	m_chatview += sender + _T(":") + chat + _T("\r\n");
+	CString message = sender + _T(":") + chat + _T("\r\n");;
+	m_chatview += message;
+	m_chatrecord->Write(message.GetString(), message.GetLength() * vytsize(sizeof(TCHAR)));
+	m_chatrecord->Flush();
 	UpdateData(FALSE);
 }
 
@@ -277,4 +287,22 @@ void FriendChatDlg::OnDropFiles(HDROP hDropInfo)
 	UpdateData(FALSE);
 
 	__super::OnDropFiles(hDropInfo);
+}
+
+
+BOOL FriendChatDlg::OnInitDialog()
+{
+	__super::OnInitDialog();
+
+	vytsize length = vytsize(m_chatrecord->GetLength());
+	if (length != 0)
+	{
+		char *buffer = new char[length+sizeof(TCHAR)]();
+		m_chatrecord->Read(buffer, length);
+		m_chatview = CString((LPCTSTR)buffer);
+		UpdateData(FALSE);
+	}
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 异常: OCX 属性页应返回 FALSE
 }
