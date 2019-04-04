@@ -5,6 +5,8 @@ import struct
 from vyterm.cryptography import Base64
 from vyterm.werewolf.Handlers import handle_packet, handle_logout
 
+_cipher = Base64()
+
 class ClientPeer:
     @staticmethod
     def SendProc(*args, **kwargs):
@@ -29,14 +31,14 @@ class ClientPeer:
         self.socket = socket
         self.packets = []
         self.sendlock = threading.Lock()
-        self.cipher = Base64()
+        # self.cipher = Base64()
         sendThread = threading.Thread(name="Send Thread", target=ClientPeer.SendProc, kwargs={'peer':self})
         sendThread.setDaemon(True)
         sendThread.start()
 
     def send(self, opcmd: int, subcmd: int, packet: bytes):
         packet = struct.pack('ii', opcmd, subcmd) + packet
-        packet = self.cipher.Encrypt(packet)
+        packet = _cipher.Encrypt(packet)
         packet = struct.pack('i', len(packet)) + packet
         self.sendlock.acquire()
         self.packets.append(packet)
@@ -54,6 +56,7 @@ def RecvProc(*args, **kwargs):
             packetsize = client.recv(4)
             packetsize, = struct.unpack('i', packetsize)
             packet = client.recv(packetsize)
+            packet = _cipher.Decrypt(packet)
             opCommand,subCommand, = struct.unpack('ii', packet[:8])
             packet = packet[8:]
             print("收到来自客户端的数据包，大小为" + str(packetsize).ljust(5, ' ')

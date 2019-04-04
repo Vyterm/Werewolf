@@ -56,6 +56,14 @@ namespace vyt
 
 	bool ClientPeer::Send(Packet packet)
 	{
+		// 因为打包后的Packet已经将头部和尾部合并起来，所以需要去除标识长度的字节再编码为Base64
+		packet->m_buffer->m_buffer += sizeof(vytsize);
+		packet->m_buffer->m_size -= sizeof(vytsize);
+		auto newBuffer = cipher.Encrypt(packet->m_buffer);
+		// 为了让Buffer能够正常销毁，因此需要重新还原其指向的位置
+		packet->m_buffer->m_buffer -= sizeof(vytsize);
+		packet->m_buffer->m_size += sizeof(vytsize);
+		packet->m_buffer = std::make_shared<vyt::__Buffer>(BufferPair({ { &newBuffer->m_size, vytsize(sizeof(vytsize)) }, { newBuffer->m_buffer, newBuffer->m_size } }));
 		return SOCKET_ERROR != ::send(m_socket, (char*)packet->getBuffer(), int(packet->getBufferSize()), 0);
 	}
 
