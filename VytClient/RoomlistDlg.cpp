@@ -110,6 +110,7 @@ void RoomlistDlg::OnBnClickedHrNewroom()
 {
 	CreateRoomDlg crd;
 	ModalDialog(crd);
+	Refresh();
 }
 
 void RoomlistDlg::OnBnClickedHrRefresh()

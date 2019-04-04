@@ -168,13 +168,12 @@ class LobbyHandler(Handler):
     def create(self, client, packet):
         if client not in _Client2Player:
             return
-        player = _Client2Player[client]
         lobby_id, size = bytes_to_string_with_size(packet)
         if lobby_id in self.Lobbys:
             client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 1))
         else:
             password = bytes_to_string(packet[size:]) if len(packet) != size else str()
-            self.Lobbys[lobby_id] = [player]
+            self.Lobbys[lobby_id] = []
             self.LobbyInfos[lobby_id] = RoomInfo(idname=lobby_id, password=password)
             client.send(OpCommand.Lobby.value, LobbyCommand.Create.value,
                         struct.pack('B', 0) + string_to_bytes(lobby_id))
@@ -210,7 +209,9 @@ class LobbyHandler(Handler):
         self.Lobbys[lobby_id].remove(player)
         for p in self.Lobbys[lobby_id]:
             _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, playerpack)
-        pass
+        if len(self.Lobbys[lobby_id]) == 0 and lobby_id in self.LobbyInfos:
+            self.Lobbys.pop(lobby_id)
+            self.LobbyInfos.pop(lobby_id)
 
     def lobby_chat(self, client, packet):
         if client not in _Client2Player:
@@ -227,7 +228,7 @@ class LobbyHandler(Handler):
         pass
 
     def __init__(self):
-        self.Lobbys = {"": []}
+        self.Lobbys = {str(): []}
         self.LobbyInfos = {}
 
     @property
@@ -244,8 +245,9 @@ class LobbyHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        for lid, lobby in self.Lobbys.items():
-            if player in lobby:
+        lobbyids = [lid for lid in self.Lobbys]
+        for lid in lobbyids:
+            if player in self.Lobbys[lid]:
                 self.leave(client, string_to_bytes(lid))
         pass
 
