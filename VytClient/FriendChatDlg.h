@@ -8,7 +8,9 @@ class FriendChatDlg : public CDialogEx, public vyt::IHandler
 	DECLARE_DYNAMIC(FriendChatDlg)
 
 public:
-	static void Create(CString selfname, CString friendname, CWnd* pParent = nullptr);
+	static const unsigned long FILE_FLAG = 1;
+	static const unsigned long VEDIO_FLAG = 2;
+	static void Create(CString selfname, CString friendname, CWnd* pParent = nullptr, unsigned long extraFlags = 0);
 private:
 	static void Delete(FriendChatDlg *pDlg);
 	static void Rename(FriendChatDlg *pDlg, CString &newname);
@@ -26,6 +28,11 @@ private:
 	CString m_friendname;
 	void UpdateTitle();
 	void ShowChat(CString &sender, CString &chat);
+	void SendFile(CString filepath);
+	void HandleRename(vyt::Packet &packet);
+	void HandleChat(vyt::Packet &packet);
+	void HandleFile(vyt::Packet &packet);
+	void HandleVideo(vyt::Packet &packet);
 public:
 	void HandlePacket(vyt::Packet &packet) override;
 
@@ -39,4 +46,5 @@ public:
 	afx_msg void SendChat();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnDropFiles(HDROP hDropInfo);
 };

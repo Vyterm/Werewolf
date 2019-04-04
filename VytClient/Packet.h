@@ -113,7 +113,7 @@ namespace vyt
 			}
 		}
 	public:
-		void Decode(const char *szFormat, ...)
+		vytsize Decode(const char *szFormat, ...)
 		{
 			auto pBuffer = this->getMessage();
 			va_list args;
@@ -121,6 +121,7 @@ namespace vyt
 			while (0 != *szFormat)
 				DecodeBuffer(*szFormat++, args, pBuffer);
 			va_end(args);
+			return vytsize(pBuffer - this->getMessage());
 		}
 		template <typename TStruct>
 		void DecodeStruct(const char *step, const char *szFormat, TStruct *pStructs, vytsize count = 1)
@@ -137,6 +138,41 @@ namespace vyt
 			}
 		}
 	};
+
+	inline Buffer _Buffer(const char *szFormat = "", ...)
+	{
+		BufferPair srcs;
+		std::deque<CString> cacheStrings;
+		std::deque<vytsize> cacheStringSizes;
+		va_list args;
+		va_start(args, szFormat);
+		while (0 != *szFormat)
+		{
+			switch (*szFormat)
+			{
+			case 's':
+			{
+				cacheStrings.push_back(CString());
+				cacheStringSizes.push_back(vytsize());
+				cacheStrings.back().SetString(va_arg(args, CString));
+				cacheStringSizes.back() = vytsize(cacheStrings.back().GetLength() * sizeof(TCHAR));
+				srcs.push_back({ &cacheStringSizes.back(), vytsize(sizeof(vytsize)) });
+				srcs.push_back({ cacheStrings.back().GetBuffer(), cacheStringSizes.back() });
+				break;
+			}
+			case 'b': srcs.push_back({ &va_arg(args, bool), vytsize(sizeof(bool)) }); break;
+			case 'i': srcs.push_back({ &va_arg(args, int), vytsize(sizeof(int)) }); break;
+			case 'h': srcs.push_back({ &va_arg(args, short), vytsize(sizeof(short)) }); break;
+			case 'f': srcs.push_back({ &va_arg(args, float), vytsize(sizeof(float)) }); break;
+			case 'd': srcs.push_back({ &va_arg(args, double), vytsize(sizeof(double)) }); break;
+			default:
+				throw std::invalid_argument("Unsolved format");
+			}
+			++szFormat;
+		}
+		va_end(args);
+		return std::make_shared<vyt::__Buffer>(std::move(srcs));
+	}
 
 	using Packet = std::shared_ptr<__Packet>;
 	inline Packet _Packet(command OpCommand, command SubCommand, BufferPair &&srcs)

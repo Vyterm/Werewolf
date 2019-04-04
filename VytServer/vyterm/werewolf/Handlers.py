@@ -363,15 +363,22 @@ class FriendHandler(Handler):
         _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.Chat.value,
                                     player_to_namebytes(player) + string_to_bytes(chat))
 
+    def direct_verify_trans(self, client, packet):
+        if client not in _Client2Player:
+            return
+        player = _Client2Player[client]
+        name, namesize = bytes_to_string_with_size(packet)
+        target = self.get_connection(player, name)
+        if target is None:
+            return
+        _Player2Client[target].send(OpCommand.Friend.value, FriendCommand.File.value,
+                                    player_to_namebytes(player) + packet[namesize:])
+
     def file_trans(self, client, packet):
-        pass
+        self.direct_verify_trans(client, packet)
 
     def video_trans(self, client, packet):
-        print(id(self), packet)
-        client.send(OpCommand.Friend.value, FriendCommand.Video.value,
-                    struct.pack('=Bifd', True, 123456, 3.14, 3.141597)
-                    + strings_to_bytes("Test", "Video"))
-        pass
+        self.direct_verify_trans(client, packet)
 
     @staticmethod
     def friend_list(client, packet):
