@@ -190,6 +190,7 @@
     <ClInclude Include="CreateRoomDlg.h" />
     <ClInclude Include="FriendChatDlg.h" />
     <ClInclude Include="FriendDlg.h" />
+    <ClInclude Include="GameRoomDlg.h" />
     <ClInclude Include="Handler.h" />
     <ClInclude Include="JoinVerifyDlg.h" />
     <ClInclude Include="LoginDlg.h" />
@@ -213,6 +214,7 @@
     <ClCompile Include="CreateRoomDlg.cpp" />
     <ClCompile Include="FriendChatDlg.cpp" />
     <ClCompile Include="FriendDlg.cpp" />
+    <ClCompile Include="GameRoomDlg.cpp" />
     <ClCompile Include="Handler.cpp" />
     <ClCompile Include="JoinVerifyDlg.cpp" />
     <ClCompile Include="LoginDlg.cpp" />

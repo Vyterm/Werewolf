@@ -81,7 +81,8 @@ if __name__ == '__main__':
     # packet = struct.pack('i', 3)[4:]
     # print(len(packet))
     # print(struct.pack('i', 3) + bytes())
-    print('select' in 'set sdla select asd')
+    # print('select' in 'set sdla select asd')
+    print(bytes().decode('utf-16') == str())
 
 
 

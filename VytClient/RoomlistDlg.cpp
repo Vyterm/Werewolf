@@ -12,6 +12,8 @@ using namespace vyt;
 
 // RoomlistDlg 对话框
 
+#pragma pack(push)
+#pragma pack(1)
 struct RoomInfo
 {
 	CString roomname;
@@ -22,6 +24,7 @@ struct RoomInfo
 	int maxplayer;
 	int mode;
 };
+#pragma pack(pop)
 
 IMPLEMENT_DYNAMIC(RoomlistDlg, BaseDialog)
 
@@ -29,6 +32,7 @@ RoomlistDlg::RoomlistDlg(CWnd* pParent /*=nullptr*/)
 	: BaseDialog(IDD_H_ROOMLIST, pParent)
 	, IHandler(command(OpCommand::Lobby), command(LobbyCommand::Refresh))
 {
+	Refresh();
 }
 
 RoomlistDlg::~RoomlistDlg()
@@ -50,9 +54,7 @@ void RoomlistDlg::HandlePacket(vyt::Packet & packet)
 			int lobbyCount;
 			packet->Decode(decodeFormat, &lobbyCount);
 			RoomInfo *pRooms = new RoomInfo[lobbyCount];
-			for (int i = 0; i < lobbyCount; ++i)
-				decodeFormat += "sbssiii";
-			packet->Decode(decodeFormat, nullptr, pRooms);
+			packet->DecodeStruct("i", "sbssiii", pRooms, lobbyCount);
 			m_roomlist.DeleteAllItems();
 			for (int i = 0; i < lobbyCount; ++i)
 			{

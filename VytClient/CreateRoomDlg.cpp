@@ -7,6 +7,8 @@
 #include "afxdialogex.h"
 #include "ClientPeer.h"
 #include "Commands.h"
+#include "GameRoomDlg.h"
+using namespace vyt;
 
 // CreateRoomDlg 对话框
 
@@ -14,6 +16,7 @@ IMPLEMENT_DYNAMIC(CreateRoomDlg, CDialogEx)
 
 CreateRoomDlg::CreateRoomDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HR_CREATEROOM, pParent)
+	, IHandler(command(OpCommand::Lobby), command(LobbyCommand::Create))
 	, m_roomname(_T(""))
 	, m_password(_T(""))
 	, m_ispassword(FALSE)
@@ -23,6 +26,21 @@ CreateRoomDlg::CreateRoomDlg(CWnd* pParent /*=nullptr*/)
 
 CreateRoomDlg::~CreateRoomDlg()
 {
+}
+
+void CreateRoomDlg::HandlePacket(vyt::Packet & packet)
+{
+	byte access = packet->getMessage()[0];
+	if (1 == access)
+		MessageBox(_T("创建房间失败，该房间已存在！"));
+	else if (0 == access)
+	{
+		MessageBox(_T("创建房间成功！"));
+		CString roomname;
+		packet->Decode("bs", nullptr, &roomname);
+		GameRoomDlg::Create(roomname);
+		EndDialog(0);
+	}
 }
 
 void CreateRoomDlg::DoDataExchange(CDataExchange* pDX)
@@ -55,7 +73,7 @@ void CreateRoomDlg::PasswordSetting()
 void CreateRoomDlg::OnCreateRoom()
 {
 	UpdateData(TRUE);
-
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Create), "s", m_roomname));
 }
 
 

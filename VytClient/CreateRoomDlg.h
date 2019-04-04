@@ -3,7 +3,7 @@
 #include "Handler.h"
 // CreateRoomDlg 对话框
 
-class CreateRoomDlg : public CDialogEx
+class CreateRoomDlg : public CDialogEx, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(CreateRoomDlg)
 
@@ -15,6 +15,9 @@ public:
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_HR_CREATEROOM };
 #endif
+
+public:
+	void HandlePacket(vyt::Packet &packet) override;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持

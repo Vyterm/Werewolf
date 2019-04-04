@@ -8,7 +8,7 @@ class ChatroomDlg : public CDialogEx, public vyt::IHandler
 	DECLARE_DYNAMIC(ChatroomDlg)
 
 public:
-	ChatroomDlg(CString lobbyID = _T(""), CWnd* pParent = nullptr);   // 标准构造函数
+	ChatroomDlg(CString lobbyID = _T(""), CWnd* pParent = nullptr, UINT dialogID = IDD_H_CHATROOM);   // 标准构造函数
 	virtual ~ChatroomDlg();
 
 // 对话框数据
@@ -16,7 +16,7 @@ public:
 	enum { IDD = IDD_H_CHATROOM };
 #endif
 
-private:
+protected:
 	int m_friendID;
 	CString m_lobbyID;
 	void LobbyJoin(vyt::Packet &packet);

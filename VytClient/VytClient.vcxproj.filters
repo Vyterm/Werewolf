@@ -103,6 +103,7 @@
     <ClInclude Include="UserInfoDlg.h">
       <Filter>Game\UI\Friend</Filter>
     </ClInclude>
+    <ClInclude Include="GameRoomDlg.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -159,6 +160,7 @@
     <ClCompile Include="UserInfoDlg.cpp">
       <Filter>Game\UI\Friend</Filter>
     </ClCompile>
+    <ClCompile Include="GameRoomDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VytClient.rc">

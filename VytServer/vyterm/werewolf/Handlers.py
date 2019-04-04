@@ -145,14 +145,14 @@ class RoomInfo(object):
 
     @property
     def has_password(self) -> bool:
-        return self.password == str()
+        return self.password != str()
 
 
 class LobbyHandler(Handler):
     def refresh(self, client, packet):
         assert len(packet) == 0
         count = 0
-        for info in self.LobbyInfos:
+        for info in self.LobbyInfos.values():
             if len(self.Lobbys[info.idname]) != 0:
                 count += 1
                 lobbyname = string_to_bytes(info.idname)
@@ -169,18 +169,20 @@ class LobbyHandler(Handler):
         if client not in _Client2Player:
             return
         player = _Client2Player[client]
-        lobby_id = bytes_to_string(packet)
+        lobby_id, size = bytes_to_string_with_size(packet)
         if lobby_id in self.Lobbys:
             client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 1))
         else:
+            password = bytes_to_string(packet[size:]) if len(packet) != size else str()
             self.Lobbys[lobby_id] = [player]
-            self.LobbyInfos[lobby_id] = RoomInfo(lobby_id)
-            client.send(OpCommand.Lobby.value, LobbyCommand.Create.value, struct.pack('B', 0))
+            self.LobbyInfos[lobby_id] = RoomInfo(idname=lobby_id, password=password)
+            client.send(OpCommand.Lobby.value, LobbyCommand.Create.value,
+                        struct.pack('B', 0) + string_to_bytes(lobby_id))
 
     def join(self, client, packet):
         if client not in _Client2Player:
             return
-        lobby_id = bytes_to_string(packet)
+        lobby_id, size = bytes_to_string_with_size(packet)
         if lobby_id not in self.Lobbys:
             return
         player = _Client2Player[client]
@@ -281,7 +283,7 @@ class FriendHandler(Handler):
         if client not in _Client2Player:
             return
         sender = _Client2Player[client]
-        # 解包获取要删除的好友标识
+        # 解包获取要添加的好友标识
         user_tag = bytes_to_string(packet)
         # 搜索缓存中的好友信息
         is_direct = user_tag.isdigit() and len(user_tag) == 11

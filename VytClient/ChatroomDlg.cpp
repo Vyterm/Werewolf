@@ -13,8 +13,8 @@ using namespace vyt;
 
 IMPLEMENT_DYNAMIC(ChatroomDlg, CDialogEx)
 
-ChatroomDlg::ChatroomDlg(CString lobbyID /* = _T("")*/, CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_H_CHATROOM, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
+ChatroomDlg::ChatroomDlg(CString lobbyID /*= _T("")*/, CWnd* pParent /*=nullptr*/, UINT dialogID /*= IDD_H_CHATROOM*/)
+	: CDialogEx(dialogID, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
 	, m_lobbyID(lobbyID)
 	, m_message(_T(""))
 	, m_chats(_T(""))
