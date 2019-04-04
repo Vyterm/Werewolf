@@ -2,6 +2,7 @@ import socket
 import threading
 # Python 会自动对齐到四字节，因此如果要发送单个字节的话，需要在格式字符串前加上=取消对齐
 import struct
+from vyterm.cryptography import Base64
 from vyterm.werewolf.Handlers import handle_packet, handle_logout
 
 class ClientPeer:
@@ -28,12 +29,14 @@ class ClientPeer:
         self.socket = socket
         self.packets = []
         self.sendlock = threading.Lock()
+        self.cipher = Base64()
         sendThread = threading.Thread(name="Send Thread", target=ClientPeer.SendProc, kwargs={'peer':self})
         sendThread.setDaemon(True)
         sendThread.start()
 
     def send(self, opcmd: int, subcmd: int, packet: bytes):
         packet = struct.pack('ii', opcmd, subcmd) + packet
+        packet = self.cipher.Encrypt(packet)
         packet = struct.pack('i', len(packet)) + packet
         self.sendlock.acquire()
         self.packets.append(packet)

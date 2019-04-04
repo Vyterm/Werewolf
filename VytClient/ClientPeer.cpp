@@ -1,7 +1,10 @@
 #include "ClientPeer.h"
+#include "Base64.h"
 
 namespace vyt
 {
+	static Base64 cipher;
+
 	ClientPeer *ClientPeer::m_instance;
 
 	Packet ClientPeer::Recv(SOCKET & socket)
@@ -14,6 +17,7 @@ namespace vyt
 		Buffer buffer = std::make_shared<__Buffer>(messageSize);
 		len = ::recv(socket, (char*)buffer->m_buffer, int(buffer->m_size), MSG_WAITALL);
 		if (-1 == len || 0 == len) return nullptr;
+		buffer = cipher.Decrypt(buffer);
 		command OpCommand = *(command*)buffer->m_buffer, SubCommand = *(command*)(buffer->m_buffer + sizeof(command));
 		vytsize commandSize = sizeof(command);
 		Packet packet(_Packet(OpCommand, SubCommand,
