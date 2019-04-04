@@ -104,6 +104,12 @@
       <Filter>Game\UI\Friend</Filter>
     </ClInclude>
     <ClInclude Include="GameRoomDlg.h" />
+    <ClInclude Include="Buffer.h">
+      <Filter>Game\Net\Packets</Filter>
+    </ClInclude>
+    <ClInclude Include="Base64.h">
+      <Filter>Game\Net</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -161,6 +167,9 @@
       <Filter>Game\UI\Friend</Filter>
     </ClCompile>
     <ClCompile Include="GameRoomDlg.cpp" />
+    <ClCompile Include="Base64.cpp">
+      <Filter>Game\Net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VytClient.rc">

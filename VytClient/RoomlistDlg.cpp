@@ -6,6 +6,7 @@
 #include "RoomlistDlg.h"
 #include "afxdialogex.h"
 #include "CreateRoomDlg.h"
+#include "GameRoomDlg.h"
 #include "ClientPeer.h"
 #include "Commands.h"
 using namespace vyt;
@@ -99,6 +100,7 @@ void RoomlistDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(RoomlistDlg, BaseDialog)
 	ON_BN_CLICKED(IDC_HR_REFRESH, &RoomlistDlg::OnBnClickedHrRefresh)
 	ON_BN_CLICKED(IDC_HR_NEWROOM, &RoomlistDlg::OnBnClickedHrNewroom)
+	ON_NOTIFY(NM_DBLCLK, IDC_HR_ROOMLIST, &RoomlistDlg::OnJoinRoom)
 END_MESSAGE_MAP()
 
 
@@ -113,4 +115,15 @@ void RoomlistDlg::OnBnClickedHrNewroom()
 void RoomlistDlg::OnBnClickedHrRefresh()
 {
 	Refresh();
+}
+
+
+void RoomlistDlg::OnJoinRoom(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	
+	if (-1 == pNMItemActivate->iItem) return;
+	GameRoomDlg::Create(m_roomlist.GetItemText(pNMItemActivate->iItem, 0));
+
+	*pResult = 0;
 }

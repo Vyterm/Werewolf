@@ -32,4 +32,5 @@ public:
 	afx_msg void OnBnClickedHrRefresh();
 	afx_msg void OnBnClickedHrNewroom();
 	virtual BOOL OnInitDialog();
+	afx_msg void OnJoinRoom(NMHDR *pNMHDR, LRESULT *pResult);
 };

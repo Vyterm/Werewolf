@@ -38,7 +38,7 @@ void CreateRoomDlg::HandlePacket(vyt::Packet & packet)
 		MessageBox(_T("创建房间成功！"));
 		CString roomname;
 		packet->Decode("bs", nullptr, &roomname);
-		GameRoomDlg::Create(roomname);
+		GameRoomDlg::Create(roomname); 
 		EndDialog(0);
 	}
 }

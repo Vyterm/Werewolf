@@ -35,6 +35,7 @@ enum class LobbyCommand
 	Join = 2,
 	Leave = 3,
 	Chat = 4,
+	Verify = 5,
 };
 
 
