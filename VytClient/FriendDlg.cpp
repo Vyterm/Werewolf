@@ -66,7 +66,8 @@ void FriendDlg::ChatAccess(vyt::Packet & packet)
 	{
 		CString friendname;
 		packet->Decode("bs", nullptr, &friendname);
-		FriendChatDlg::Create(m_username, friendname, this);
+		FriendChatDlg::Create(m_username, friendname, this, m_friendFlag);
+		m_friendFlag = FriendChatDlg::CHAT_FLAG;
 	}
 	else if (access == 1)
 		MessageBox(_T("好友名称错误!"));
@@ -143,6 +144,9 @@ BEGIN_MESSAGE_MAP(FriendDlg, BaseDialog)
 	ON_BN_CLICKED(IDC_HF_USERNAME, &FriendDlg::OnShowDetails)
 	ON_NOTIFY(NM_RCLICK, IDC_HFU_FRIENDLIST, &FriendDlg::InteractionWithFriend)
 	ON_COMMAND(ID_HF_CHAT, &FriendDlg::OnChatToFriend)
+	ON_COMMAND(ID_HF_FILE, &FriendDlg::OnFileFriend)
+	ON_COMMAND(ID_HF_VIDEO, &FriendDlg::OnVideoFriend)
+	ON_COMMAND(ID_HF_ADD, &FriendDlg::OnAppendFriend)
 	ON_COMMAND(ID_HF_DEL, &FriendDlg::OnDeleteFriend)
 END_MESSAGE_MAP()
 
@@ -177,7 +181,28 @@ void FriendDlg::InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult)
 
 void FriendDlg::OnChatToFriend()
 {
+	m_friendFlag = FriendChatDlg::CHAT_FLAG;
 	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", 0, m_friends.GetItemText(m_friendID, 0)));
+}
+
+
+void FriendDlg::OnFileFriend()
+{
+	m_friendFlag = FriendChatDlg::FILE_FLAG;
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", 0, m_friends.GetItemText(m_friendID, 0)));
+}
+
+
+void FriendDlg::OnVideoFriend()
+{
+	m_friendFlag = FriendChatDlg::VIDEO_FLAG;
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Access), "is", 0, m_friends.GetItemText(m_friendID, 0)));
+}
+
+
+void FriendDlg::OnAppendFriend()
+{
+	// TODO: 在此添加命令处理程序代码
 }
 
 

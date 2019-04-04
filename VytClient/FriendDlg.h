@@ -19,6 +19,7 @@ public:
 
 private:
 	CString m_username;
+	UINT_PTR m_friendFlag;
 	int m_friendID;
 	void ShowFriends(vyt::Packet &packet);
 	void FriendRename(vyt::Packet &packet);
@@ -37,5 +38,8 @@ public:
 	afx_msg void OnShowDetails();
 	afx_msg void InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnChatToFriend();
+	afx_msg void OnFileFriend();
+	afx_msg void OnVideoFriend();
+	afx_msg void OnAppendFriend();
 	afx_msg void OnDeleteFriend();
 };

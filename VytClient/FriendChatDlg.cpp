@@ -7,13 +7,28 @@
 #include "afxdialogex.h"
 #include "Commands.h"
 #include "ClientPeer.h"
+#include <opencv2/opencv.hpp>
 #include <map>
+#include <vector>
 
 using namespace vyt;
 
-// FriendChatDlg 对话框
+// Send
+static cv::Mat img_encode;
+static cv::VideoCapture capture(0);
+static std::vector<uchar> video_encode;
+// Recv
+static cv::Mat img_decode;
+static std::vector<uchar> video_decode;
 
 static std::map<CString, FriendChatDlg*> pFriends;
+
+inline CString GetDocumentPath()
+{
+	TCHAR homePath[MAX_PATH] = { 0 };
+	SHGetSpecialFolderPath(AfxGetMainWnd()->GetSafeHwnd(), homePath, 5, false);
+	return homePath;
+}
 
 void FriendChatDlg::Create(CString selfname, CString friendname, CWnd* pParent, unsigned long extraFlags)
 {
@@ -26,13 +41,29 @@ void FriendChatDlg::Create(CString selfname, CString friendname, CWnd* pParent, 
 	else
 		fcd = pFriends.find(friendname)->second;
 	fcd->ShowWindow(SW_SHOW);
+	if (extraFlags & FILE_FLAG)
+	{
+		OPENFILENAME ofn = { sizeof(OPENFILENAME) };
+		TCHAR path[MAX_PATH] = {};
+		ofn.nFilterIndex = 1;
+		ofn.lpstrInitialDir = _T("./");
+		ofn.lpstrFile = path;
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrFilter = _T("所有文件(*.*)\0*.*\0\0");
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_FILEMUSTEXIST;
+		if (GetOpenFileName(&ofn))
+			fcd->SendFile(path);
+	}
+	else if (extraFlags & VIDEO_FLAG)
+		fcd->SetTimer(VIDEO_TIMER, 100, nullptr);
 }
 
 void FriendChatDlg::Delete(FriendChatDlg * pDlg)
 {
 	pFriends.erase(pFriends.find(pDlg->m_friendname));
+	pDlg->KillTimer(VIDEO_TIMER);
 	pDlg->ShowWindow(SW_HIDE);
-	pDlg->SetTimer(0x1234, 1000, nullptr);
+	pDlg->SetTimer(DIED_TIMER, 1000, nullptr);
 }
 
 void FriendChatDlg::Rename(FriendChatDlg *pDlg, CString &newname)
@@ -82,22 +113,6 @@ void FriendChatDlg::ShowChat(CString &sender, CString & chat)
 	UpdateData(FALSE);
 }
 
-void FriendChatDlg::SendFile(CString filepath)
-{
-	CString filename = filepath.Mid(filepath.ReverseFind('\\') + 1);
-	CFile file;
-	file.Open(filepath, CFile::modeRead);
-	vytsize length = vytsize(file.GetLength());
-	char *pBuffer = new char[length];
-	file.Read(pBuffer, length);
-	Buffer buffer = _Buffer("ss", m_friendname, filename);
-	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::File), {
-		{ buffer->m_buffer, buffer->m_size },
-		{ pBuffer, length },
-		}));
-	file.Close();
-}
-
 void FriendChatDlg::HandleRename(vyt::Packet & packet)
 {
 	CString oldname, newname;
@@ -116,29 +131,70 @@ void FriendChatDlg::HandleChat(vyt::Packet & packet)
 	ShowChat(sender, chat);
 }
 
+void FriendChatDlg::SendFile(CString filepath)
+{
+	CString filename = filepath.Mid(filepath.ReverseFind('\\') + 1);
+	CFile file;
+	file.Open(filepath, CFile::modeRead);
+	vytsize length = vytsize(file.GetLength());
+	char *pBuffer = new char[length];
+	file.Read(pBuffer, length);
+	Buffer buffer = _Buffer("ss", m_friendname, filename);
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::File), {
+		{ buffer->m_buffer, buffer->m_size },
+		{ pBuffer, length },
+		}));
+	file.Close();
+}
+
 void FriendChatDlg::HandleFile(vyt::Packet & packet)
 {
 	CString filename;
 	vytsize size = packet->Decode("ss", nullptr, &filename);
-	CString filepath;
-	filepath.Format(_T("C:\\Users\\Vyterm\\Documents\\%s"), filename);
+	CString filepath = GetDocumentPath() + _T("\\");
+	CString fullpath = filepath + filename;
 	char path[MAX_PATH] = {};
-	WideCharToMultiByte(CP_ACP, 0, filepath, -1, path, MAX_PATH, nullptr, FALSE);
+	WideCharToMultiByte(CP_ACP, 0, fullpath, -1, path, MAX_PATH, nullptr, FALSE);
 	FILE *file = nullptr;
 	fopen_s(&file, path, "w+");
 	if (nullptr != file)
 	{
 		fwrite(packet->getMessage() + size, packet->getMessageSize() - size, 1, file);
 		fclose(file);
-		system("explorer C:\\Users\\Vyterm\\Documents");
+		ShellExecute(nullptr, _T("explore"), filepath, nullptr, nullptr, SW_SHOW);
 		CString message;
 		message.Format(_T("收到来自 %s 的文件 %s"), m_friendname, filename);
 		MessageBox(message);
 	}
 }
 
+void FriendChatDlg::SendVideo()
+{
+	if (!capture.read(img_encode)) return;
+	cv::imencode(".jpg", img_encode, video_encode);
+	vytsize len_encode = vytsize(video_encode.size());
+	__Buffer buffer(len_encode);
+	for (vytsize i = 0; i < len_encode; ++i)
+		buffer.m_buffer[i] = video_encode[i];
+	auto userpack = _Buffer("s", m_friendname);
+	ClientPeer::Get().Send(_Packet(command(OpCommand::Friend), command(FriendCommand::Video), {
+		{ userpack->m_buffer, userpack->m_size },
+		{ buffer.m_buffer, buffer.m_size },
+	}));
+}
+
 void FriendChatDlg::HandleVideo(vyt::Packet & packet)
 {
+	vytsize len_name = packet->Decode("s", nullptr);
+	pByte buffer = packet->getMessage() + len_name;
+	vytsize len_buffer = packet->getMessageSize() - len_name;
+	video_decode.resize(len_buffer);
+	for (vytsize i = 0; i < len_buffer; i++)
+		video_decode[i] = buffer[i];
+	img_decode = imdecode(video_decode, cv::ImreadModes::IMREAD_COLOR);
+	char name[MAX_PATH] = {};
+	WideCharToMultiByte(CP_ACP, 0, m_friendname, -1, name, MAX_PATH, nullptr, FALSE);
+	imshow(name, img_decode);
 }
 
 void FriendChatDlg::HandlePacket(vyt::Packet & packet)
@@ -205,8 +261,10 @@ BOOL FriendChatDlg::PreTranslateMessage(MSG* pMsg)
 void FriendChatDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	__super::OnTimer(nIDEvent);
-
-	delete this;
+	if (nIDEvent == VIDEO_TIMER)
+		SendVideo();
+	else if (nIDEvent == DIED_TIMER)
+		delete this;
 }
 
 
