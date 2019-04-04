@@ -1,10 +1,11 @@
 ﻿#pragma once
 
+#include "BaseDialog.h"
 #include "SmartListCtrl.h"
 #include "Handler.h"
 // RoomlistDlg 对话框
 
-class RoomlistDlg : public CDialogEx, public vyt::IHandler
+class RoomlistDlg : public BaseDialog, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(RoomlistDlg)
 

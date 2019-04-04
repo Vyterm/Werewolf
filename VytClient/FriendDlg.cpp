@@ -38,13 +38,10 @@ FriendDlg::~FriendDlg()
 
 void FriendDlg::ShowFriends(vyt::Packet & packet)
 {
-	CStringA packetFormat = "i";
 	int count;
-	packet->Decode(packetFormat, &count);
+	packet->Decode("i", &count);
 	CString *buffers = new CString[count];
-	for (int i = 0; i < count; ++i)
-		packetFormat += "s";
-	packet->Decode(packetFormat, nullptr, buffers);
+	packet->Decode("iS", nullptr, &buffers, count);
 	for (int i = 0; i < count; ++i)
 		m_friends.InsertItem(i, buffers[i]);
 	delete[] buffers;

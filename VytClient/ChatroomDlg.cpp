@@ -13,32 +13,86 @@ using namespace vyt;
 
 IMPLEMENT_DYNAMIC(ChatroomDlg, CDialogEx)
 
-ChatroomDlg::ChatroomDlg(CWnd* pParent /*=nullptr*/)
+ChatroomDlg::ChatroomDlg(CString lobbyID /* = _T("")*/, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_H_CHATROOM, pParent), IHandler(command(OpCommand::Lobby), command(LobbyCommand::Chat))
-	, m_playerHandler(m_players)
-	, m_roomID(_T(""))
+	, m_lobbyID(lobbyID)
 	, m_message(_T(""))
 	, m_chats(_T(""))
 {
-	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Join), "s", m_roomID));
+	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Join), *this);
+	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+	NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
+	vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Join), "s", m_lobbyID));
 }
 
 ChatroomDlg::~ChatroomDlg()
 {
+	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Join), *this);
+	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
+	NetHandler::Get().UnregisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
 }
 
-void ChatroomDlg::HandlePacket(vyt::Packet & packet)
+void ChatroomDlg::LobbyJoin(vyt::Packet & packet)
 {
-	CString lobbyId;
-	packet->Decode("s", &lobbyId);
-	if (m_roomID != lobbyId) return;
+	CString player;
+	packet->Decode("ss", nullptr, &player);
+	m_players.InsertItem(m_players.GetItemCount(), player);
+}
+
+void ChatroomDlg::LobbyLeave(vyt::Packet & packet)
+{
+	CString player;
+	packet->Decode("ss", nullptr, &player);
+	for (int i = 0; i < m_players.GetItemCount(); ++i)
+		if (m_players.GetItemText(i, 0) == player)
+		{
+			m_players.DeleteItem(i);
+			break;
+		}
+}
+
+void ChatroomDlg::LobbyChat(vyt::Packet & packet)
+{
 	CString senderName, chatMessage;
 	packet->Decode("sss", nullptr, &senderName, &chatMessage);
 	UpdateData(TRUE);
 	m_chats += senderName + _T(":") + chatMessage + _T("\r\n");
 	UpdateData(FALSE);
 	m_chatscroll.LineScroll(m_chatscroll.GetLineCount());
-	//m_chatscroll.SendMessage(WM_VSCROLL, SB_BOTTOM, 0);
+}
+
+void ChatroomDlg::PlayerRename(vyt::Packet & packet)
+{
+	CString oldname;
+	CString newname;
+	packet->Decode("ss", &oldname, &newname);
+	for (int i = 0; i < m_players.GetItemCount(); ++i)
+		if (m_players.GetItemText(i, 0) == oldname)
+		{
+			m_players.SetItemText(i, 0, newname);
+			break;
+		}
+}
+
+void ChatroomDlg::HandlePacket(vyt::Packet & packet)
+{
+	if (packet->getOpCommand() == command(OpCommand::Lobby))
+	{
+		CString lobbyId;
+		packet->Decode("s", &lobbyId);
+		if (m_lobbyID != lobbyId) return;
+		if (packet->getSubCommand() == command(LobbyCommand::Chat))
+			LobbyChat(packet);
+		else if (packet->getSubCommand() == command(LobbyCommand::Join))
+			LobbyJoin(packet);
+		else if (packet->getSubCommand() == command(LobbyCommand::Leave))
+			LobbyLeave(packet);
+	}
+	else if (packet->getOpCommand() == command(OpCommand::User))
+	{
+		if (packet->getSubCommand() == command(UserCommand::Rename))
+			PlayerRename(packet);
+	}
 }
 
 void ChatroomDlg::DoDataExchange(CDataExchange* pDX)
@@ -66,7 +120,7 @@ void ChatroomDlg::DoSend()
 	UpdateData(TRUE);
 	if (_T("") != m_message)
 	{
-		vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Chat), "ss", m_roomID, m_message));
+		vyt::ClientPeer::Get().Send(_Packet(command(OpCommand::Lobby), command(LobbyCommand::Chat), "ss", m_lobbyID, m_message));
 		m_message = _T("");
 		UpdateData(FALSE);
 	}
@@ -91,74 +145,6 @@ BOOL ChatroomDlg::OnInitDialog()
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
 }
-
-void PlayerListHandler::PlayerJoin(CString player)
-{
-	m_players.InsertItem(m_players.GetItemCount(), player);
-}
-
-void PlayerListHandler::PlayerLeave(CString player)
-{
-	for (int i = 0; i < m_players.GetItemCount(); ++i)
-		if (m_players.GetItemText(i, 0) == player)
-		{
-			m_players.DeleteItem(i);
-			break;
-		}
-}
-
-void PlayerListHandler::PlayerRename(CString oldname, CString newname)
-{
-	for (int i = 0; i < m_players.GetItemCount(); ++i)
-		if (m_players.GetItemText(i, 0) == oldname)
-		{
-			m_players.SetItemText(i, 0, newname);
-			break;
-		}
-}
-
-PlayerListHandler::PlayerListHandler(CListCtrl & players)
-	: IHandler(command(OpCommand::Lobby), command(LobbyCommand::Join)), m_players(players)
-{
-	NetHandler::Get().RegisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
-	NetHandler::Get().RegisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
-}
-
-PlayerListHandler::~PlayerListHandler()
-{
-	NetHandler::Get().UnregisterHandler(command(OpCommand::Lobby), command(LobbyCommand::Leave), *this);
-	NetHandler::Get().UnregisterHandler(command(OpCommand::User), command(UserCommand::Rename), *this);
-}
-
-void PlayerListHandler::HandlePacket(vyt::Packet & packet)
-{
-	if (packet->getOpCommand() == command(OpCommand::Lobby))
-	{
-		if (packet->getSubCommand() == command(LobbyCommand::Join))
-		{
-			CString player;
-			packet->Decode("s", &player);
-			PlayerJoin(player);
-		}
-		else if (packet->getSubCommand() == command(LobbyCommand::Leave))
-		{
-			CString player;
-			packet->Decode("s", &player);
-			PlayerLeave(player);
-		}
-	}
-	else if (packet->getOpCommand() == command(OpCommand::User))
-	{
-		if (packet->getSubCommand() == command(UserCommand::Rename))
-		{
-			CString player;
-			CString newname;
-			packet->Decode("ss", &player, &newname);
-			PlayerRename(player, newname);
-		}
-	}
-}
-
 
 void ChatroomDlg::OnSelectPlayer(NMHDR *pNMHDR, LRESULT *pResult)
 {

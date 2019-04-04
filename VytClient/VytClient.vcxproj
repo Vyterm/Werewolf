@@ -187,9 +187,11 @@
     <ClInclude Include="ChatroomDlg.h" />
     <ClInclude Include="ClientPeer.h" />
     <ClInclude Include="Commands.h" />
+    <ClInclude Include="CreateRoomDlg.h" />
     <ClInclude Include="FriendChatDlg.h" />
     <ClInclude Include="FriendDlg.h" />
     <ClInclude Include="Handler.h" />
+    <ClInclude Include="JoinVerifyDlg.h" />
     <ClInclude Include="LoginDlg.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="RegisDlg.h" />
@@ -208,9 +210,11 @@
     <ClCompile Include="BaseDialog.cpp" />
     <ClCompile Include="ChatroomDlg.cpp" />
     <ClCompile Include="ClientPeer.cpp" />
+    <ClCompile Include="CreateRoomDlg.cpp" />
     <ClCompile Include="FriendChatDlg.cpp" />
     <ClCompile Include="FriendDlg.cpp" />
     <ClCompile Include="Handler.cpp" />
+    <ClCompile Include="JoinVerifyDlg.cpp" />
     <ClCompile Include="LoginDlg.cpp" />
     <ClCompile Include="RegisDlg.cpp" />
     <ClCompile Include="RegisVerifyDlg.cpp" />

@@ -186,10 +186,12 @@ class LobbyHandler(Handler):
         player = _Client2Player[client]
         if player in self.Lobbys[lobby_id]:
             return
+        lidpack = string_to_bytes(lobby_id)
+        playerpack = lidpack + player_to_namebytes(player)
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(player))
-            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(p))
-        client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, player_to_namebytes(player))
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Join.value, playerpack)
+            client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, lidpack + player_to_namebytes(p))
+        client.send(OpCommand.Lobby.value, LobbyCommand.Join.value, playerpack)
         self.Lobbys[lobby_id].append(player)
         pass
 
@@ -202,9 +204,10 @@ class LobbyHandler(Handler):
         player = _Client2Player[client]
         if player not in self.Lobbys[lobby_id]:
             return
+        playerpack = string_to_bytes(lobby_id) + player_to_namebytes(player)
         self.Lobbys[lobby_id].remove(player)
         for p in self.Lobbys[lobby_id]:
-            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, player_to_namebytes(player))
+            _Player2Client[p].send(OpCommand.Lobby.value, LobbyCommand.Leave.value, playerpack)
         pass
 
     def lobby_chat(self, client, packet):

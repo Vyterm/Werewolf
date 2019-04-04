@@ -120,12 +120,58 @@ namespace vyt
 
 	private:
 		template <typename T>
-		static void SetBuffer(va_list &args, pByte &pBuffer)
+		static void DecodeBuffer(T *pointer, pByte &pBuffer)
 		{
-			T* pointer = va_arg(args, T*);
 			if (nullptr != pointer)
 				*pointer = *(T*)pBuffer;
 			pBuffer += sizeof(T);
+		}
+		template <>
+		static void DecodeBuffer(CString *pointerString, pByte &pBuffer)
+		{
+			vytsize stringLength = *(vytsize*)pBuffer;
+			pBuffer += sizeof(vytsize);
+			TCHAR &cache = *(TCHAR*)(pBuffer + stringLength);
+			TCHAR tmp = cache;
+			cache = _T('\0');
+			if (nullptr != pointerString)
+				pointerString->SetString((LPCTSTR)pBuffer);
+			cache = tmp;
+			pBuffer += stringLength;
+
+		}
+		template <typename T>
+		static void DecodeBuffer(va_list &args, pByte &pBuffer)
+		{
+			DecodeBuffer(va_arg(args, T*), pBuffer);
+		}
+		template <typename T>
+		static void DecodeBuffers(va_list &args, pByte &pBuffer)
+		{
+			T *&pointerObjects = *va_arg(args, T**);
+			vytsize objectCount = va_arg(args, vytsize);
+			for (vytsize i = 0; i < objectCount; ++i)
+				DecodeBuffer(&pointerObjects[i], pBuffer);
+		}
+		static void DecodeBuffer(char format, va_list &args, pByte &pBuffer)
+		{
+			switch (format)
+			{
+			case 's': DecodeBuffer<CString>(args, pBuffer); break;
+			case 'b': DecodeBuffer<bool>(args, pBuffer); break;
+			case 'i': DecodeBuffer<int>(args, pBuffer); break;
+			case 'h': DecodeBuffer<short>(args, pBuffer); break;
+			case 'f': DecodeBuffer<float>(args, pBuffer); break;
+			case 'd': DecodeBuffer<double>(args, pBuffer); break;
+			case 'S': DecodeBuffers<CString>(args, pBuffer); break;
+			case 'B': DecodeBuffers<bool>(args, pBuffer); break;
+			case 'I': DecodeBuffers<int>(args, pBuffer); break;
+			case 'H': DecodeBuffers<short>(args, pBuffer); break;
+			case 'F': DecodeBuffers<float>(args, pBuffer); break;
+			case 'D': DecodeBuffers<double>(args, pBuffer); break;
+			default:
+				throw std::invalid_argument("Unsolved format");
+			}
 		}
 	public:
 		void Decode(const char *szFormat, ...)
@@ -134,33 +180,7 @@ namespace vyt
 			va_list args;
 			va_start(args, szFormat);
 			while (0 != *szFormat)
-			{
-				switch (*szFormat)
-				{
-				case 's':
-				{
-					vytsize stringLength = *(vytsize*)pBuffer;
-					pBuffer += sizeof(vytsize);
-					TCHAR &cache = *(TCHAR*)(pBuffer+stringLength);
-					TCHAR tmp = cache;
-					cache = _T('\0');
-					auto pointerString = va_arg(args, CString*);
-					if (nullptr != pointerString)
-						pointerString->SetString((LPCTSTR)pBuffer);
-					cache = tmp;
-					pBuffer += stringLength;
-					break;
-				}
-				case 'b': SetBuffer<bool>(args, pBuffer); break;
-				case 'i': SetBuffer<int>(args, pBuffer); break;
-				case 'h': SetBuffer<short>(args, pBuffer); break;
-				case 'f': SetBuffer<float>(args, pBuffer); break;
-				case 'd': SetBuffer<double>(args, pBuffer); break;
-				default:
-					throw std::invalid_argument("Unsolved format");
-				}
-				++szFormat;
-			}
+				DecodeBuffer(*szFormat++, args, pBuffer);
 			va_end(args);
 		}
 	};

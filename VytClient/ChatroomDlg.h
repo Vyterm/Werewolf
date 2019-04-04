@@ -3,25 +3,12 @@
 #include "Handler.h"
 // ChatroomDlg 对话框
 
-class PlayerListHandler : public vyt::IHandler
-{
-private:
-	CListCtrl &m_players;
-	void PlayerJoin(CString player);
-	void PlayerLeave(CString player);
-	void PlayerRename(CString oldname, CString newname);
-public:
-	PlayerListHandler(CListCtrl &players);
-	virtual ~PlayerListHandler();
-	void HandlePacket(vyt::Packet &packet);
-};
-
 class ChatroomDlg : public CDialogEx, public vyt::IHandler
 {
 	DECLARE_DYNAMIC(ChatroomDlg)
 
 public:
-	ChatroomDlg(CWnd* pParent = nullptr);   // 标准构造函数
+	ChatroomDlg(CString lobbyID = _T(""), CWnd* pParent = nullptr);   // 标准构造函数
 	virtual ~ChatroomDlg();
 
 // 对话框数据
@@ -31,7 +18,11 @@ public:
 
 private:
 	int m_friendID;
-	CString m_roomID;
+	CString m_lobbyID;
+	void LobbyJoin(vyt::Packet &packet);
+	void LobbyLeave(vyt::Packet &packet);
+	void LobbyChat(vyt::Packet &packet);
+	void PlayerRename(vyt::Packet &packet);
 public:
 	void HandlePacket(vyt::Packet &packet);
 
@@ -41,7 +32,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CListCtrl m_players;
-	PlayerListHandler m_playerHandler;
 	CString m_message;
 	afx_msg void DoSend();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);

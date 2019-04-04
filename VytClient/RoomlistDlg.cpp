@@ -5,6 +5,7 @@
 #include "VytClient.h"
 #include "RoomlistDlg.h"
 #include "afxdialogex.h"
+#include "CreateRoomDlg.h"
 #include "ClientPeer.h"
 #include "Commands.h"
 using namespace vyt;
@@ -22,10 +23,10 @@ struct RoomInfo
 	int mode;
 };
 
-IMPLEMENT_DYNAMIC(RoomlistDlg, CDialogEx)
+IMPLEMENT_DYNAMIC(RoomlistDlg, BaseDialog)
 
 RoomlistDlg::RoomlistDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_H_ROOMLIST, pParent)
+	: BaseDialog(IDD_H_ROOMLIST, pParent)
 	, IHandler(command(OpCommand::Lobby), command(LobbyCommand::Refresh))
 {
 }
@@ -88,12 +89,12 @@ BOOL RoomlistDlg::OnInitDialog()
 
 void RoomlistDlg::DoDataExchange(CDataExchange* pDX)
 {
-	CDialogEx::DoDataExchange(pDX);
+	BaseDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_HR_ROOMLIST, m_roomlist);
 }
 
 
-BEGIN_MESSAGE_MAP(RoomlistDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(RoomlistDlg, BaseDialog)
 	ON_BN_CLICKED(IDC_HR_REFRESH, &RoomlistDlg::OnBnClickedHrRefresh)
 	ON_BN_CLICKED(IDC_HR_NEWROOM, &RoomlistDlg::OnBnClickedHrNewroom)
 END_MESSAGE_MAP()
@@ -103,7 +104,8 @@ END_MESSAGE_MAP()
 
 void RoomlistDlg::OnBnClickedHrNewroom()
 {
-	// TODO: 在此添加控件通知处理程序代码
+	CreateRoomDlg crd;
+	ModalDialog(crd);
 }
 
 void RoomlistDlg::OnBnClickedHrRefresh()

@@ -29,6 +29,12 @@
     <Filter Include="Game\UI\Login">
       <UniqueIdentifier>{9d55b97a-6d35-4129-a061-fcd6b7d20166}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\UI\Room">
+      <UniqueIdentifier>{e2710941-3522-4a6a-b8d1-1a47076475ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\UI\Friend">
+      <UniqueIdentifier>{23710c4f-f568-4792-aa05-0d16665296be}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Packet.h">
@@ -79,15 +85,23 @@
     <ClInclude Include="RegisVerifyDlg.h">
       <Filter>Game\UI\Login</Filter>
     </ClInclude>
-    <ClInclude Include="UserInfoDlg.h">
-      <Filter>Game\UI\Home</Filter>
-    </ClInclude>
     <ClInclude Include="BaseDialog.h">
       <Filter>Game\UI\Custom</Filter>
     </ClInclude>
-    <ClInclude Include="FriendChatDlg.h" />
     <ClInclude Include="SmartListCtrl.h">
       <Filter>Game\UI\Custom</Filter>
+    </ClInclude>
+    <ClInclude Include="CreateRoomDlg.h">
+      <Filter>Game\UI\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="JoinVerifyDlg.h">
+      <Filter>Game\UI\Room</Filter>
+    </ClInclude>
+    <ClInclude Include="FriendChatDlg.h">
+      <Filter>Game\UI\Friend</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInfoDlg.h">
+      <Filter>Game\UI\Friend</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -127,15 +141,23 @@
     <ClCompile Include="RegisVerifyDlg.cpp">
       <Filter>Game\UI\Login</Filter>
     </ClCompile>
-    <ClCompile Include="UserInfoDlg.cpp">
-      <Filter>Game\UI\Home</Filter>
-    </ClCompile>
     <ClCompile Include="BaseDialog.cpp">
       <Filter>Game\UI\Custom</Filter>
     </ClCompile>
-    <ClCompile Include="FriendChatDlg.cpp" />
     <ClCompile Include="SmartListCtrl.cpp">
       <Filter>Game\UI\Custom</Filter>
+    </ClCompile>
+    <ClCompile Include="CreateRoomDlg.cpp">
+      <Filter>Game\UI\Room</Filter>
+    </ClCompile>
+    <ClCompile Include="JoinVerifyDlg.cpp">
+      <Filter>Game\UI\Room</Filter>
+    </ClCompile>
+    <ClCompile Include="FriendChatDlg.cpp">
+      <Filter>Game\UI\Friend</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInfoDlg.cpp">
+      <Filter>Game\UI\Friend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
