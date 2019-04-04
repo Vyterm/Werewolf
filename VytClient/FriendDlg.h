@@ -19,7 +19,7 @@ public:
 
 private:
 	CString m_username;
-	UINT_PTR m_friendFlag;
+	unsigned long m_friendFlag;
 	int m_friendID;
 	void ShowFriends(vyt::Packet &packet);
 	void FriendRename(vyt::Packet &packet);

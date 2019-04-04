@@ -280,6 +280,21 @@ class FriendHandler(Handler):
         pass
 
     @staticmethod
+    def search_friend(client, packet):
+        # 解包获取要添加的好友标识
+        user_tag = bytes_to_string(packet)
+        # 搜索缓存中的好友信息
+        is_direct = user_tag.isdigit() and len(user_tag) == 11
+        if is_direct:
+            player = Caches().search_user_by_phone(user_tag)
+        else:
+            player = Caches().search_user_by_name(user_tag)
+        if player is None:
+            client.send(OpCommand.Friend.value, FriendCommand.Search.value, struct.pack('B', 1))
+        else:
+            client.send(OpCommand.Friend.value, FriendCommand.Search.value, struct.pack('B', 0))
+
+    @staticmethod
     def add_friend(client, packet):
         # 判断发起请求的玩家是否在线
         if client not in _Client2Player:
@@ -293,8 +308,8 @@ class FriendHandler(Handler):
             player = Caches().search_user_by_phone(user_tag)
         else:
             player = Caches().search_user_by_name(user_tag)
-        # 如果要添加为好友的玩家不在线，添加失败
-        if player not in _Player2Client:
+        # 找不到好友则添加失败
+        if player is None:
             client.send(OpCommand.Friend.value, FriendCommand.Add.value, struct.pack('B', 1))
         # 不能添加自身为好友
         elif sender == player:
@@ -306,11 +321,13 @@ class FriendHandler(Handler):
         else:
             # 在缓存中建立好友连接
             Caches().create_connection(sender, player)
-            # 给双方发送添加好友成功的消息
-            _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
-                                        struct.pack('B', 0) + player_to_namebytes(sender))
+            # 给客户端发送添加好友成功的消息
             client.send(OpCommand.Friend.value, FriendCommand.Add.value,
                         struct.pack('B', 0) + player_to_namebytes(player))
+            # 如果好友在线，则向好友客户端也发送添加好友的消息
+            if player in _Player2Client:
+                _Player2Client[player].send(OpCommand.Friend.value, FriendCommand.Add.value,
+                                        struct.pack('B', 0) + player_to_namebytes(sender))
         pass
 
     def del_friend(self, client, packet):
@@ -434,6 +451,7 @@ class FriendHandler(Handler):
             FriendCommand.Video.value: self.video_trans,
             FriendCommand.List.value: self.friend_list,
             FriendCommand.Access.value: self.access_chat,
+            FriendCommand.Search.value: self.search_friend,
         }
 
     def logout(self, client):

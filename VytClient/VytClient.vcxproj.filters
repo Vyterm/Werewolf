@@ -110,6 +110,7 @@
     <ClInclude Include="Base64.h">
       <Filter>Game\Net</Filter>
     </ClInclude>
+    <ClInclude Include="SearchFriendDlg.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientPeer.cpp">
@@ -170,6 +171,7 @@
     <ClCompile Include="Base64.cpp">
       <Filter>Game\Net</Filter>
     </ClCompile>
+    <ClCompile Include="SearchFriendDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VytClient.rc">

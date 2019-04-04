@@ -9,6 +9,7 @@
 #include "Commands.h"
 #include "UserInfoDlg.h"
 #include "FriendChatDlg.h"
+#include "SearchFriendDlg.h"
 using namespace vyt;
 
 // FriendDlg 对话框
@@ -168,9 +169,16 @@ void FriendDlg::InteractionWithFriend(NMHDR *pNMHDR, LRESULT *pResult)
 	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 	
 	m_friendID = pNMItemActivate->iItem;
-	if (-1 == m_friendID) return;
 	CMenu menu;
 	menu.LoadMenu(IDR_HOMETRACK);
+	auto trackMenu = menu.GetSubMenu(1);
+	if (-1 == m_friendID)
+	{
+		trackMenu->EnableMenuItem(ID_HF_CHAT, MF_DISABLED | MF_GRAYED);
+		trackMenu->EnableMenuItem(ID_HF_FILE, MF_DISABLED | MF_GRAYED);
+		trackMenu->EnableMenuItem(ID_HF_VIDEO, MF_DISABLED | MF_GRAYED);
+		trackMenu->EnableMenuItem(ID_HF_DEL, MF_DISABLED | MF_GRAYED);
+	}
 	POINT pos;
 	GetCursorPos(&pos);
 	menu.GetSubMenu(1)->TrackPopupMenu(TPM_LEFTALIGN, pos.x, pos.y, this);
@@ -202,7 +210,8 @@ void FriendDlg::OnVideoFriend()
 
 void FriendDlg::OnAppendFriend()
 {
-	// TODO: 在此添加命令处理程序代码
+	SearchFriendDlg sfd;
+	ModalDialog(sfd);
 }
 
 

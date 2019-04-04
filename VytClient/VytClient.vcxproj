@@ -213,6 +213,7 @@
     <ClInclude Include="RegisVerifyDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RoomlistDlg.h" />
+    <ClInclude Include="SearchFriendDlg.h" />
     <ClInclude Include="SmartListCtrl.h" />
     <ClInclude Include="SmartTabCtrl.h" />
     <ClInclude Include="stdafx.h" />
@@ -236,6 +237,7 @@
     <ClCompile Include="RegisDlg.cpp" />
     <ClCompile Include="RegisVerifyDlg.cpp" />
     <ClCompile Include="RoomlistDlg.cpp" />
+    <ClCompile Include="SearchFriendDlg.cpp" />
     <ClCompile Include="SmartListCtrl.cpp" />
     <ClCompile Include="SmartTabCtrl.cpp" />
     <ClCompile Include="stdafx.cpp">
